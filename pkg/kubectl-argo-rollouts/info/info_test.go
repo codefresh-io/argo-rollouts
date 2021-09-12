@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/info/testdata"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/info/testdata"
 )
 
 func TestAge(t *testing.T) {

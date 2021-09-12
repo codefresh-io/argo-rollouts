@@ -12,7 +12,7 @@ import (
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 const metadataValidation = `properties:
@@ -310,7 +310,7 @@ func main() {
 
 		// Need to explicitly set spec.preserveUnknownFields to false, despite false being the
 		// default value in v1, in order to facilitate upgrades from apiextensions.k8s.io/v1beta1 v1.
-		// See https://github.com/argoproj/argo-rollouts/issues/1067
+		// See https://github.com/codefresh-io/argo-rollouts/issues/1067
 		unstructured.SetNestedField(r.Object, false, "spec", "preserveUnknownFields")
 
 		// clean up crd yaml before marshalling

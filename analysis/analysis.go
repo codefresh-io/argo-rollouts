@@ -11,11 +11,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 )
 
 const (

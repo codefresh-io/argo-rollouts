@@ -11,7 +11,7 @@ rollout_iid=$(cat ${rollout_iid_file})
 container_id=$(docker create ${rollout_iid})
 
 for plat in linux-amd64 darwin-amd64 ; do
-    docker cp ${container_id}:/go/src/github.com/argoproj/argo-rollouts/dist/kubectl-argo-rollouts-${plat} ${SRCROOT}/dist
+    docker cp ${container_id}:/go/src/github.com/codefresh-io/argo-rollouts/dist/kubectl-argo-rollouts-${plat} ${SRCROOT}/dist
 done
 docker rm -v ${container_id}
 rm -f ${rollout_iid_file}

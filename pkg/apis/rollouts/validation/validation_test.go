@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
 )
 
 func TestValidateRollout(t *testing.T) {

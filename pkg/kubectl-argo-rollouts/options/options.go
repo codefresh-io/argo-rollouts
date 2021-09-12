@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	roclientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
+	roclientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
 )
 
 const (

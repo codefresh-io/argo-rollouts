@@ -5,10 +5,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	rolloutlister "github.com/argoproj/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rolloutlister "github.com/codefresh-io/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
 )
 
 // RolloutPhase the phases of a reconcile can have

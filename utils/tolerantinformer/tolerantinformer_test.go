@@ -9,8 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	testutil "github.com/argoproj/argo-rollouts/test/util"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	testutil "github.com/codefresh-io/argo-rollouts/test/util"
 )
 
 const (

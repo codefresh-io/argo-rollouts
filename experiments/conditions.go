@@ -5,8 +5,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
 )
 
 func calculateExperimentConditions(experiment *v1alpha1.Experiment, newStatus v1alpha1.ExperimentStatus) *v1alpha1.ExperimentStatus {

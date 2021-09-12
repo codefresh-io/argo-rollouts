@@ -15,9 +15,9 @@ import (
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	kubetesting "k8s.io/client-go/testing"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	cliopts "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
-	options "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	cliopts "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	options "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
 )
 
 // getRollout helper to get the rollout using the dynamic interface

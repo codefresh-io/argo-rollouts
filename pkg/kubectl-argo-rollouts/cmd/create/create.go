@@ -17,11 +17,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/get"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/get"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
 )
 
 type CreateOptions struct {

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/argoproj/argo-rollouts/utils/queue"
+	"github.com/codefresh-io/argo-rollouts/utils/queue"
 
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/labels"
@@ -18,11 +18,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo-rollouts/pkg/apiclient/rollout"
-	rolloutclientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	rolloutinformers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
-	rolloutlisters "github.com/argoproj/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/info"
+	"github.com/codefresh-io/argo-rollouts/pkg/apiclient/rollout"
+	rolloutclientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	rolloutinformers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
+	rolloutlisters "github.com/codefresh-io/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/info"
 )
 
 // viewController is a mini controller which allows printing of live updates to rollouts

@@ -19,7 +19,7 @@ import (
 	kubetesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
 var noResyncPeriodFunc = func() time.Duration { return 0 }

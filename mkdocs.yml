@@ -107,10 +107,10 @@ nav:
   - Contribution Guide: CONTRIBUTING.md
   - Environment Setup: getting-started/setup/index.md
   - Releasing: releasing.md
-- Releases ⧉: https://github.com/argoproj/argo-rollouts/releases
-- Roadmap ⧉: https://github.com/argoproj/argo-rollouts/milestones
+- Releases ⧉: https://github.com/codefresh-io/argo-rollouts/releases
+- Roadmap ⧉: https://github.com/codefresh-io/argo-rollouts/milestones
 - Blog ⧉: https://blog.argoproj.io/
-repo_url: https://github.com/argoproj/argo-rollouts
+repo_url: https://github.com/codefresh-io/argo-rollouts
 site_name: Argo Rollouts - Kubernetes Progressive Delivery Controller
 site_url: https://argoproj.github.io/argo-rollouts
 theme:

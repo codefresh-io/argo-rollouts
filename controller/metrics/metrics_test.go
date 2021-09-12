@@ -12,9 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	informerfactory "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	informerfactory "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 func newFakeServerConfig(objs ...runtime.Object) ServerConfig {

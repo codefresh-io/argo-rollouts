@@ -21,8 +21,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubectl/pkg/scheme"
 
-	rolloutscheme "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/scheme"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	rolloutscheme "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/scheme"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 func init() {

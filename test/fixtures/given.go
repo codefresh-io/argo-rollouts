@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	rov1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rov1 "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
 type Given struct {

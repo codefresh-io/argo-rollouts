@@ -9,8 +9,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
 
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
-	fakeoptions "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	fakeoptions "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
 )
 
 func TestExample(t *testing.T) {

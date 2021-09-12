@@ -14,12 +14,12 @@ import (
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	rolloutfake "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	rolloutinformers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
-	testutil "github.com/argoproj/argo-rollouts/test/util"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rolloutfake "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	rolloutinformers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
+	testutil "github.com/codefresh-io/argo-rollouts/test/util"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 func NewFakeIstioController(objs ...runtime.Object) *IstioController {

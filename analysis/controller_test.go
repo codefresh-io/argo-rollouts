@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/argoproj/argo-rollouts/utils/queue"
+	"github.com/codefresh-io/argo-rollouts/utils/queue"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -22,13 +22,13 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo-rollouts/controller/metrics"
-	"github.com/argoproj/argo-rollouts/metricproviders"
-	"github.com/argoproj/argo-rollouts/metricproviders/mocks"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	"github.com/codefresh-io/argo-rollouts/controller/metrics"
+	"github.com/codefresh-io/argo-rollouts/metricproviders"
+	"github.com/codefresh-io/argo-rollouts/metricproviders/mocks"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 )
 
 var (

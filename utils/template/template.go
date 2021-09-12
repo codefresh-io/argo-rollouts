@@ -10,7 +10,7 @@ import (
 	"github.com/valyala/fasttemplate"
 	appsv1 "k8s.io/api/apps/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
 const (

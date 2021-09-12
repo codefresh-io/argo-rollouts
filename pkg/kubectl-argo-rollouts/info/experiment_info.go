@@ -9,8 +9,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/argoproj/argo-rollouts/pkg/apiclient/rollout"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apiclient/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
 func NewExperimentInfo(

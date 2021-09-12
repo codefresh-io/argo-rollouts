@@ -7,12 +7,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	"github.com/argoproj/argo-rollouts/utils/record"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	rolloututil "github.com/codefresh-io/argo-rollouts/utils/rollout"
 )
 
 func (c *rolloutContext) rolloutCanary() error {

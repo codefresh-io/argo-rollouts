@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	rolloututil "github.com/codefresh-io/argo-rollouts/utils/rollout"
 )
 
 const (

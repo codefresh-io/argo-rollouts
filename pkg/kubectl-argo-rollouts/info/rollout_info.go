@@ -9,11 +9,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apiclient/rollout"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apiclient/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	rolloututil "github.com/codefresh-io/argo-rollouts/utils/rollout"
 )
 
 func NewRolloutInfo(

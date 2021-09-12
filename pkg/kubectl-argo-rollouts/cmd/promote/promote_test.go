@@ -12,9 +12,9 @@ import (
 	kubetesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	fakeroclient "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	options "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	fakeroclient "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	options "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
 )
 
 func TestPromoteCmdUsage(t *testing.T) {

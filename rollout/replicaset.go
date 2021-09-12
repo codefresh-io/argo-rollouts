@@ -12,9 +12,9 @@ import (
 	patchtypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubernetes/pkg/controller"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
 )
 
 var controllerKind = v1alpha1.SchemeGroupVersion.WithKind("Rollout")

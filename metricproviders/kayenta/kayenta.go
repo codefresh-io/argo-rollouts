@@ -14,9 +14,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 
-	metricutil "github.com/argoproj/argo-rollouts/utils/metric"
+	metricutil "github.com/codefresh-io/argo-rollouts/utils/metric"
 )
 
 const (

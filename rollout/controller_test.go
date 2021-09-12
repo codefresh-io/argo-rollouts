@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/argoproj/argo-rollouts/utils/queue"
+	"github.com/codefresh-io/argo-rollouts/utils/queue"
 
 	"github.com/ghodss/yaml"
 	log "github.com/sirupsen/logrus"
@@ -40,19 +40,19 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/controller/metrics"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/validation"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
-	"github.com/argoproj/argo-rollouts/rollout/mocks"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	"github.com/argoproj/argo-rollouts/utils/record"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
+	"github.com/codefresh-io/argo-rollouts/controller/metrics"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/validation"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
+	"github.com/codefresh-io/argo-rollouts/rollout/mocks"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	rolloututil "github.com/codefresh-io/argo-rollouts/utils/rollout"
 )
 
 var (

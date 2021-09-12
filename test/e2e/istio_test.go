@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/tj/assert"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/test/fixtures"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/test/fixtures"
 )
 
 type IstioSuite struct {

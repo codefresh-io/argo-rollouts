@@ -17,8 +17,8 @@ import (
 	apivalidation "k8s.io/kubernetes/pkg/apis/core/validation"
 	"k8s.io/kubernetes/pkg/fieldpath"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
 )
 
 const (
@@ -148,7 +148,7 @@ func ValidateRolloutSpec(rollout *v1alpha1.Rollout, fldPath *field.Path) field.E
 // calls k8s.io/kubernetes/pkg/capabilities.Get(), which determines the security capabilities at a
 // global level. We don't want to call capabilities.Setup(), because it affects it as a global
 // level, so instead we remove the privileged setting on any containers so validation ignores it.
-// See https://github.com/argoproj/argo-rollouts/issues/796
+// See https://github.com/codefresh-io/argo-rollouts/issues/796
 func removeSecurityContextPrivileged(template *core.PodTemplateSpec) {
 	for _, ctrList := range [][]core.Container{template.Spec.Containers, template.Spec.InitContainers} {
 		for i, ctr := range ctrList {

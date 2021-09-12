@@ -15,10 +15,10 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamiclister"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 )
 
 const Type = "Istio"

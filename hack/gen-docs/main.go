@@ -16,8 +16,8 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd"
-	options "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd"
+	options "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
 )
 
 func main() {

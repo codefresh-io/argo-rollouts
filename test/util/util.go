@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
 )
 
 // ObjectFromYAML returns a runtime.Object from a yaml string

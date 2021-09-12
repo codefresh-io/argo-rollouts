@@ -23,10 +23,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
 
-	rov1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	clientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	rov1 "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	clientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 const (

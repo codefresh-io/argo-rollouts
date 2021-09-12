@@ -25,17 +25,17 @@ import (
 	watchutil "k8s.io/client-go/tools/watch"
 	retryutil "k8s.io/client-go/util/retry"
 
-	"github.com/argoproj/argo-rollouts/pkg/apiclient/rollout"
-	rov1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/abort"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/promote"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/restart"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/retry"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/status"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/viewcontroller"
-	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/pkg/apiclient/rollout"
+	rov1 "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/abort"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/promote"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/restart"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/retry"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/status"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/viewcontroller"
+	rolloututil "github.com/codefresh-io/argo-rollouts/utils/rollout"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 type When struct {

@@ -13,12 +13,12 @@ import (
 	testclient "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 	"github.com/stretchr/testify/assert"
 )
 

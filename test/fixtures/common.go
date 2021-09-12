@@ -27,17 +27,17 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	rov1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	clientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/get"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/viewcontroller"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/istio"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rov1 "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	clientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/cmd/get"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/viewcontroller"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/istio"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 //nolint:structcheck

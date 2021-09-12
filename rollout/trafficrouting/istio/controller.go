@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/argoproj/argo-rollouts/utils/queue"
+	"github.com/codefresh-io/argo-rollouts/utils/queue"
 
 	log "github.com/sirupsen/logrus"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,14 +21,14 @@ import (
 	"k8s.io/kubectl/pkg/cmd/util"
 	"k8s.io/kubectl/pkg/util/slice"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	roclientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
-	controllerutil "github.com/argoproj/argo-rollouts/utils/controller"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	roclientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
+	controllerutil "github.com/codefresh-io/argo-rollouts/utils/controller"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 const (

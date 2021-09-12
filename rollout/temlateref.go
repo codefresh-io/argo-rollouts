@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	clientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	clientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"

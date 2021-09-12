@@ -8,9 +8,9 @@ import (
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	fakeroclient "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	fakeroclient "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

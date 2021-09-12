@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	core "k8s.io/client-go/testing"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	options "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	options "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 )
 

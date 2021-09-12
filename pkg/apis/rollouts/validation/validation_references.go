@@ -6,19 +6,19 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	serviceutil "github.com/argoproj/argo-rollouts/utils/service"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	serviceutil "github.com/codefresh-io/argo-rollouts/utils/service"
 
-	ingressutil "github.com/argoproj/argo-rollouts/utils/ingress"
+	ingressutil "github.com/codefresh-io/argo-rollouts/utils/ingress"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/ambassador"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/istio"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/ambassador"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/istio"
 )
 
 // Controller will validate references in reconciliation

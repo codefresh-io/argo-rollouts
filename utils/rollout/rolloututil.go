@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
 )
 
 // GetRolloutPhase returns a status and message for a rollout. Takes into consideration whether

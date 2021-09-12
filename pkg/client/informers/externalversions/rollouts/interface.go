@@ -19,8 +19,8 @@ limitations under the License.
 package rollouts
 
 import (
-	internalinterfaces "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
+	internalinterfaces "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

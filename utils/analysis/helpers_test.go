@@ -13,8 +13,8 @@ import (
 	kubetesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
 )
 
 func TestIsWorst(t *testing.T) {

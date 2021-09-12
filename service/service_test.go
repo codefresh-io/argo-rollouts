@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/argoproj/argo-rollouts/utils/queue"
+	"github.com/codefresh-io/argo-rollouts/utils/queue"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -14,10 +14,10 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo-rollouts/controller/metrics"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
+	"github.com/codefresh-io/argo-rollouts/controller/metrics"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
 	"k8s.io/client-go/tools/cache"
 )
 

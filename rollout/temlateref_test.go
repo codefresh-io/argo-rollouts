@@ -8,11 +8,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
-	rolloutinformers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
+	rolloutinformers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

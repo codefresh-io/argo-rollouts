@@ -33,26 +33,26 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/controller/metrics"
-	register "github.com/argoproj/argo-rollouts/pkg/apis/rollouts"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/validation"
-	clientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
-	listers "github.com/argoproj/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/ambassador"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/istio"
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	controllerutil "github.com/argoproj/argo-rollouts/utils/controller"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	experimentutil "github.com/argoproj/argo-rollouts/utils/experiment"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	"github.com/argoproj/argo-rollouts/utils/record"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	serviceutil "github.com/argoproj/argo-rollouts/utils/service"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/controller/metrics"
+	register "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/validation"
+	clientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
+	listers "github.com/codefresh-io/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/ambassador"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/istio"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	controllerutil "github.com/codefresh-io/argo-rollouts/utils/controller"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	experimentutil "github.com/codefresh-io/argo-rollouts/utils/experiment"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	serviceutil "github.com/codefresh-io/argo-rollouts/utils/service"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 type TemplateRefResolver interface {
@@ -379,7 +379,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// In order to work with HPA, the rollout.Spec.Replica field cannot be nil. As a result, the controller will update
-	// the rollout to have the replicas field set to the default value. see https://github.com/argoproj/argo-rollouts/issues/119
+	// the rollout to have the replicas field set to the default value. see https://github.com/codefresh-io/argo-rollouts/issues/119
 	if rollout.Spec.Replicas == nil {
 		logCtx.Info("Defaulting .spec.replica to 1")
 		r.Spec.Replicas = pointer.Int32Ptr(defaults.DefaultReplicas)

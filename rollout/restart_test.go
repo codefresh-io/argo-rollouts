@@ -18,8 +18,8 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 func rollout(selector string, restartAt metav1.Time, restartedAt *metav1.Time) *v1alpha1.Rollout {

@@ -12,16 +12,16 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo-rollouts/controller/metrics"
-	"github.com/argoproj/argo-rollouts/metricproviders"
-	register "github.com/argoproj/argo-rollouts/pkg/apis/rollouts"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	clientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
-	listers "github.com/argoproj/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
-	controllerutil "github.com/argoproj/argo-rollouts/utils/controller"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	"github.com/codefresh-io/argo-rollouts/controller/metrics"
+	"github.com/codefresh-io/argo-rollouts/metricproviders"
+	register "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	clientset "github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions/rollouts/v1alpha1"
+	listers "github.com/codefresh-io/argo-rollouts/pkg/client/listers/rollouts/v1alpha1"
+	controllerutil "github.com/codefresh-io/argo-rollouts/utils/controller"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 )
 
 // Controller is the controller implementation for Analysis resources

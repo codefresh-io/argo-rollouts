@@ -18,12 +18,12 @@ import (
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	kubetesting "k8s.io/client-go/testing"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/client/clientset/versioned/fake"
 
-	informers "github.com/argoproj/argo-rollouts/pkg/client/informers/externalversions"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	informers "github.com/codefresh-io/argo-rollouts/pkg/client/informers/externalversions"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 )
 
 func newTestContext(ex *v1alpha1.Experiment, objects ...runtime.Object) *experimentContext {

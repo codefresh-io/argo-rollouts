@@ -14,10 +14,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	"github.com/argoproj/argo-rollouts/utils/replicaset"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
 const (

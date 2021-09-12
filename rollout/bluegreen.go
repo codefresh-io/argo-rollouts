@@ -8,10 +8,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	serviceutil "github.com/argoproj/argo-rollouts/utils/service"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	serviceutil "github.com/codefresh-io/argo-rollouts/utils/service"
 )
 
 // rolloutBlueGreen implements the logic for rolling a new replica set.

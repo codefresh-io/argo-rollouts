@@ -182,7 +182,7 @@ type BlueGreenStrategy struct {
 	// ScaleDownDelaySeconds adds a delay before scaling down the previous replicaset.
 	// If omitted, the Rollout waits 30 seconds before scaling down the previous ReplicaSet.
 	// A minimum of 30 seconds is recommended to ensure IP table propagation across the nodes in
-	// a cluster. See https://github.com/argoproj/argo-rollouts/issues/19#issuecomment-476329960 for
+	// a cluster. See https://github.com/codefresh-io/argo-rollouts/issues/19#issuecomment-476329960 for
 	// more information
 	// +optional
 	ScaleDownDelaySeconds *int32 `json:"scaleDownDelaySeconds,omitempty" protobuf:"varint,7,opt,name=scaleDownDelaySeconds"`

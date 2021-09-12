@@ -20,11 +20,11 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 // FindNewReplicaSet returns the new RS this given rollout targets from the given list.
@@ -499,7 +499,7 @@ func PodTemplateEqualIgnoreHash(live, desired *corev1.PodTemplateSpec) bool {
 	// ReplicaSet pod template, this field will be populated, but in the desired pod template
 	// it will be missing (even after defaulting), causing us to believe there is a diff
 	// (when there really wasn't), and hence causing an unsolicited update to be triggered.
-	// See: https://github.com/argoproj/argo-rollouts/issues/1356
+	// See: https://github.com/codefresh-io/argo-rollouts/issues/1356
 	desired.Spec.DeprecatedServiceAccount = ""
 	live.Spec.DeprecatedServiceAccount = ""
 

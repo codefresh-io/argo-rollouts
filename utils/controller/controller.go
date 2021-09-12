@@ -19,9 +19,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/argoproj/argo-rollouts/controller/metrics"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/controller/metrics"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 // processNextWatchObj will process a single object from the watch by seeing if

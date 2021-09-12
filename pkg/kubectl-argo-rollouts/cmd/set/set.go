@@ -3,7 +3,7 @@ package set
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options"
 )
 
 const (

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/argoproj/argo-rollouts/test/fixtures"
+	"github.com/codefresh-io/argo-rollouts/test/fixtures"
 )
 
 type BlueGreenSuite struct {

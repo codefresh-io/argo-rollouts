@@ -9,13 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	rov1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/test/fixtures"
+	rov1 "github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/test/fixtures"
 )
 
 type ExperimentSuite struct {
 	fixtures.E2ESuite
 }
+
 // TestRolloutWithExperimentAndAnalysis this tests the ability for a rollout to launch an experiment,
 // and use self-referencing features/pass metadata arguments to the experiment and analysis, such as:
 //  * specRef: stable
@@ -70,7 +71,7 @@ func (s *ExperimentSuite) TestRolloutWithExperimentAndAnalysis() {
 			assert.NotEqual(s.T(), expRSBaselineHash, expRSCanaryHash)
 
 			// verify we use different pod hashes for experiment replicasets vs. rollout replicasets
-			// See: https://github.com/argoproj/argo-rollouts/issues/380
+			// See: https://github.com/codefresh-io/argo-rollouts/issues/380
 			assert.NotEqual(s.T(), rs1Hash, expRSBaseline, "rs %s and %s share same pod hash", rs1.Name, expRSBaseline.Name)
 			assert.NotEqual(s.T(), rs2Hash, expRSCanaryHash, "rs %s and %s share same pod hash", rs2.Name, expRSCanary.Name)
 

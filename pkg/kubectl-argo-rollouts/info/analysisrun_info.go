@@ -6,10 +6,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/argoproj/argo-rollouts/metricproviders/job"
-	"github.com/argoproj/argo-rollouts/pkg/apiclient/rollout"
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
+	"github.com/codefresh-io/argo-rollouts/metricproviders/job"
+	"github.com/codefresh-io/argo-rollouts/pkg/apiclient/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
 )
 
 func getAnalysisRunInfo(ownerUID types.UID, allAnalysisRuns []*v1alpha1.AnalysisRun) []*rollout.AnalysisRunInfo {

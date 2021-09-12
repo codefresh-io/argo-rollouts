@@ -7,7 +7,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
 const (

@@ -44,7 +44,7 @@ RUN NODE_ENV='production' yarn build
 ####################################################################################################
 FROM golang:1.16.3 as argo-rollouts-build
 
-WORKDIR /go/src/github.com/argoproj/argo-rollouts
+WORKDIR /go/src/github.com/codefresh-io/argo-rollouts
 
 # Copy only go.mod and go.sum files. This way on subsequent docker builds if the
 # dependencies didn't change it won't re-download the dependencies for nothing.
@@ -71,7 +71,7 @@ RUN make ${MAKE_TARGET}
 ####################################################################################################
 FROM docker.io/library/ubuntu:20.10 as kubectl-argo-rollouts
 
-COPY --from=argo-rollouts-build /go/src/github.com/argoproj/argo-rollouts/dist/kubectl-argo-rollouts-linux-amd64 /bin/kubectl-argo-rollouts
+COPY --from=argo-rollouts-build /go/src/github.com/codefresh-io/argo-rollouts/dist/kubectl-argo-rollouts-linux-amd64 /bin/kubectl-argo-rollouts
 
 USER 999
 
@@ -86,7 +86,7 @@ CMD ["dashboard"]
 ####################################################################################################
 FROM scratch
 
-COPY --from=argo-rollouts-build /go/src/github.com/argoproj/argo-rollouts/dist/rollouts-controller /bin/
+COPY --from=argo-rollouts-build /go/src/github.com/codefresh-io/argo-rollouts/dist/rollouts-controller /bin/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Use numeric user, allows kubernetes to identify this user as being

@@ -11,10 +11,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	ingressutil "github.com/argoproj/argo-rollouts/utils/ingress"
-	jsonutil "github.com/argoproj/argo-rollouts/utils/json"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	ingressutil "github.com/codefresh-io/argo-rollouts/utils/ingress"
+	jsonutil "github.com/codefresh-io/argo-rollouts/utils/json"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 func (c *Controller) syncALBIngress(ingress *extensionsv1beta1.Ingress, rollouts []*v1alpha1.Rollout) error {

@@ -14,11 +14,11 @@ import (
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/dynamic/dynamiclister"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	testutil "github.com/argoproj/argo-rollouts/test/util"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	"github.com/argoproj/argo-rollouts/utils/record"
-	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	testutil "github.com/codefresh-io/argo-rollouts/test/util"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
+	unstructuredutil "github.com/codefresh-io/argo-rollouts/utils/unstructured"
 )
 
 func getIstioListers(client dynamic.Interface) (dynamiclister.Lister, dynamiclister.Lister) {

@@ -13,18 +13,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	"github.com/argoproj/argo-rollouts/utils/evaluate"
-	metricutil "github.com/argoproj/argo-rollouts/utils/metric"
-	"github.com/argoproj/argo-rollouts/utils/version"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/utils/evaluate"
+	metricutil "github.com/codefresh-io/argo-rollouts/utils/metric"
+	"github.com/codefresh-io/argo-rollouts/utils/version"
 )
 
 const (
 	//ProviderType indicates the provider is wavefront
 	ProviderType                     = "NewRelic"
 	DefaultNewRelicProfileSecretName = "newrelic"
-	repoURL                          = "https://github.com/argoproj/argo-rollouts"
+	repoURL                          = "https://github.com/codefresh-io/argo-rollouts"
 )
 
 var userAgent = fmt.Sprintf("argo-rollouts/%s (%s)", version.GetVersion(), repoURL)

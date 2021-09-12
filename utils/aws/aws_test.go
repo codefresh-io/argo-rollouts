@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/utils/aws/mocks"
+	"github.com/codefresh-io/argo-rollouts/utils/aws/mocks"
 )
 
 func newFakeClient() (*mocks.ELBv2APIClient, Client) {

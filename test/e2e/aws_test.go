@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/argoproj/argo-rollouts/test/fixtures"
+	"github.com/codefresh-io/argo-rollouts/test/fixtures"
 )
 
 type AWSSuite struct {

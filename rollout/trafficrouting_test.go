@@ -14,16 +14,16 @@ import (
 	"k8s.io/client-go/dynamic/dynamiclister"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/rollout/mocks"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/alb"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/istio"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/nginx"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/smi"
-	testutil "github.com/argoproj/argo-rollouts/test/util"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/rollout/mocks"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/alb"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/istio"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/nginx"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/smi"
+	testutil "github.com/codefresh-io/argo-rollouts/test/util"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	istioutil "github.com/codefresh-io/argo-rollouts/utils/istio"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 // newFakeTrafficRoutingReconciler returns a fake TrafficRoutingReconciler with mocked success return values

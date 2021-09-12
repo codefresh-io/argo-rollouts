@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/info/testdata"
-	options "github.com/argoproj/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
+	"github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/info/testdata"
+	options "github.com/codefresh-io/argo-rollouts/pkg/kubectl-argo-rollouts/options/fake"
 	"github.com/stretchr/testify/assert"
 )
 

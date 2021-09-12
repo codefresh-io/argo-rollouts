@@ -3,15 +3,15 @@ package rollout
 import (
 	"time"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/alb"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/ambassador"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/istio"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/nginx"
-	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/smi"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/alb"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/ambassador"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/istio"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/nginx"
+	"github.com/codefresh-io/argo-rollouts/rollout/trafficrouting/smi"
 
-	"github.com/argoproj/argo-rollouts/utils/record"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
 )
 
 // TrafficRoutingReconciler common function across all TrafficRouting implementation

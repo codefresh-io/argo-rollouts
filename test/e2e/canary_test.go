@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/test/fixtures"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/test/fixtures"
 )
 
 type CanarySuite struct {
@@ -157,7 +157,7 @@ spec:
 		WaitForRolloutReplicas(10).
 		Then().
 		// NOTE: the numbers below may change in the future.
-		// See: https://github.com/argoproj/argo-rollouts/issues/738
+		// See: https://github.com/codefresh-io/argo-rollouts/issues/738
 		ExpectCanaryStablePodCount(6, 4).
 		When().
 		ScaleRollout(4)

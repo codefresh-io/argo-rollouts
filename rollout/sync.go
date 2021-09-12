@@ -16,17 +16,17 @@ import (
 	labelsutil "k8s.io/kubernetes/pkg/util/labels"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
-	"github.com/argoproj/argo-rollouts/utils/annotations"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	"github.com/argoproj/argo-rollouts/utils/defaults"
-	"github.com/argoproj/argo-rollouts/utils/diff"
-	experimentutil "github.com/argoproj/argo-rollouts/utils/experiment"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
-	"github.com/argoproj/argo-rollouts/utils/record"
-	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
-	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
+	"github.com/codefresh-io/argo-rollouts/utils/annotations"
+	"github.com/codefresh-io/argo-rollouts/utils/conditions"
+	"github.com/codefresh-io/argo-rollouts/utils/defaults"
+	"github.com/codefresh-io/argo-rollouts/utils/diff"
+	experimentutil "github.com/codefresh-io/argo-rollouts/utils/experiment"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
+	replicasetutil "github.com/codefresh-io/argo-rollouts/utils/replicaset"
+	rolloututil "github.com/codefresh-io/argo-rollouts/utils/rollout"
 )
 
 // getAllReplicaSetsAndSyncRevision returns all the replica sets for the provided rollout (new and all old), with new RS's and rollout's revision updated.

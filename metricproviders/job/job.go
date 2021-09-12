@@ -14,9 +14,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	batchlisters "k8s.io/client-go/listers/batch/v1"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
-	metricutil "github.com/argoproj/argo-rollouts/utils/metric"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	analysisutil "github.com/codefresh-io/argo-rollouts/utils/analysis"
+	metricutil "github.com/codefresh-io/argo-rollouts/utils/metric"
 )
 
 const (

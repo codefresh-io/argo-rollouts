@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
+	logutil "github.com/codefresh-io/argo-rollouts/utils/log"
 )
 
 // convertObject converts a runtime.Object into the supplied concrete typed object

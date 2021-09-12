@@ -1,4 +1,4 @@
-PACKAGE=github.com/argoproj/argo-rollouts
+PACKAGE=github.com/codefresh-io/argo-rollouts
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
 PATH := $(DIST_DIR):$(PATH)
@@ -136,7 +136,7 @@ gen-proto: k8s-proto api-proto ui-proto
 k8s-proto: go-mod-vendor install-toolchain $(TYPES)
 	PATH=${DIST_DIR}:$$PATH go-to-protobuf \
 		--go-header-file=./hack/custom-boilerplate.go.txt \
-		--packages=github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1 \
+		--packages=github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1 \
 		--apimachinery-packages=${APIMACHINERY_PKGS} \
 		--proto-import $(CURDIR)/vendor
 	touch pkg/apis/rollouts/v1alpha1/generated.proto
@@ -170,8 +170,8 @@ gen-mocks: $(DIST_DIR)/mockery
 gen-openapi: $(DIST_DIR)/openapi-gen
 	PATH=${DIST_DIR}:$$PATH openapi-gen \
 		--go-header-file ${CURRENT_DIR}/hack/custom-boilerplate.go.txt \
-		--input-dirs github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1 \
-		--output-package github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1 \
+		--input-dirs github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1 \
+		--output-package github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1 \
 		--report-filename pkg/apis/api-rules/violation_exceptions.list
 
 .PHONY: controller

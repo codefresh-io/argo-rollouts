@@ -1,7 +1,7 @@
 # This example reproduces a cornercase bug where there are multiple errors in the rollout causing a panic:
 # 1. duplicated name in the ephemeralContainer
 # 2. invalid resource request in ephemeral container
-# See: https://github.com/argoproj/argo-rollouts/issues/1045
+# See: https://github.com/codefresh-io/argo-rollouts/issues/1045
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 #apiVersion: apps/v1
@@ -26,7 +26,7 @@ spec:
       # NOTE: kubernetes drops the ephemeral containers list completely when one fails to unmarshal
       # (e.g. when one has an invalid resource quantity). So for better or worse, this rollout will
       # become healthy.
-      ephemeralContainers: 
+      ephemeralContainers:
       - name: malformed-rollout-ephemeral   # duplicated name
         image: argoproj/rollouts-demo:blue
         resources:

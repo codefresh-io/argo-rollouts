@@ -20,11 +20,11 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
-	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/argoproj/argo-rollouts/utils/aws"
-	ingressutil "github.com/argoproj/argo-rollouts/utils/ingress"
-	jsonutil "github.com/argoproj/argo-rollouts/utils/json"
-	"github.com/argoproj/argo-rollouts/utils/record"
+	"github.com/codefresh-io/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/codefresh-io/argo-rollouts/utils/aws"
+	ingressutil "github.com/codefresh-io/argo-rollouts/utils/ingress"
+	jsonutil "github.com/codefresh-io/argo-rollouts/utils/json"
+	"github.com/codefresh-io/argo-rollouts/utils/record"
 )
 
 func fakeRollout(stableSvc, canarySvc, stableIng string, port int32) *v1alpha1.Rollout {
