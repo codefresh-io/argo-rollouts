@@ -108,8 +108,8 @@ jobs:
 
       - name: Create links
         run: |
-          mkdir -p ~/go/src/github.com/argoproj
-          cp -a ../argo-rollouts ~/go/src/github.com/argoproj
+          mkdir -p ~/go/src/github.com/codefresh-io
+          cp -a ../argo-rollouts ~/go/src/github.com/codefresh-io
 
       - name: Vendor and Download
         run: |
