@@ -54,4 +54,3 @@ jobs:
         with:
           name: e2e-controller-k8s.log
           path: /tmp/e2e-controller.log
-        if: ${{ failure() }}
