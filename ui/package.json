@@ -18,7 +18,7 @@
         "@types/react-helmet": "^6.1.0",
         "@types/react-router-dom": "^5.1.7",
         "argo-ux": "^1.1.4",
-        "moment": "^2.29.1",
+        "moment": "^2.29.2",
         "moment-timezone": "^0.5.33",
         "portable-fetch": "^3.0.0",
         "react": "^17.0.1",
