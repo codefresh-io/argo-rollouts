@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"k8s.io/utils/pointer"
+
+	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	ingressutil "github.com/argoproj/argo-rollouts/utils/ingress"
+	"github.com/argoproj/argo-rollouts/utils/unstructured"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
