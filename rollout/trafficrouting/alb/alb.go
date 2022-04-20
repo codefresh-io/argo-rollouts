@@ -37,11 +37,11 @@ type ReconcilerConfig struct {
 	IngressWrapper IngressWrapper
 	VerifyWeight   *bool
 }
-
 type IngressWrapper interface {
 	GetCached(namespace, name string) (*ingressutil.Ingress, error)
 	Patch(ctx context.Context, namespace, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*ingressutil.Ingress, error)
 }
+
 
 // Reconciler holds required fields to reconcile ALB Ingress resources
 type Reconciler struct {
