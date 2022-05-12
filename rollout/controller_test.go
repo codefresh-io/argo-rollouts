@@ -519,7 +519,7 @@ func (f *fixture) newController(resync resyncFunc) (*Controller, informers.Share
 		f.t.Fatal(err)
 	}
 
-	ingressWrapper, err := ingressutil.NewIngressWrapper(ingressutil.IngressModeExtensions, f.kubeclient, k8sI)
+	ingressWrapper, err = ingressutil.NewIngressWrapper(ingressutil.IngressModeExtensions, f.kubeclient, k8sI)
 	if err != nil {
 		f.t.Fatal(err)
 	}
