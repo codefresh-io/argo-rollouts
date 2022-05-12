@@ -1,26 +1,32 @@
 package record
 
 import (
+	"context"
 	"encoding/json"
 	"regexp"
 	"strings"
-
-	"github.com/argoproj/notifications-engine/pkg/services"
+	"time"
 
 	"github.com/argoproj/notifications-engine/pkg/api"
+	"github.com/argoproj/notifications-engine/pkg/services"
 	"github.com/argoproj/notifications-engine/pkg/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubectl/pkg/scheme"
 
+	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	rolloutscheme "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/scheme"
 	logutil "github.com/argoproj/argo-rollouts/utils/log"
 )
@@ -89,6 +95,39 @@ type FakeEventRecorder struct {
 	Events []string
 }
 
+func NewFakeApiFactory() api.Factory {
+	var (
+		settings = api.Settings{ConfigMapName: "my-config-map", SecretName: "my-secret", InitGetVars: func(cfg *api.Config, configMap *corev1.ConfigMap, secret *corev1.Secret) (api.GetVars, error) {
+			return func(obj map[string]interface{}, dest services.Destination) map[string]interface{} {
+				return map[string]interface{}{"obj": obj}
+			}, nil
+		}}
+	)
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-config-map", Namespace: "default"},
+		Data: map[string]string{
+			"service.slack": `{"token": "abc"}`,
+		},
+	}
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-secret", Namespace: "default"},
+	}
+
+	clientset := k8sfake.NewSimpleClientset(cm, secret)
+	informerFactory := k8sinformers.NewSharedInformerFactory(clientset, time.Minute)
+
+	secrets := informerFactory.Core().V1().Secrets().Informer()
+	configMaps := informerFactory.Core().V1().ConfigMaps().Informer()
+	apiFactory := api.NewFactory(settings, "default", secrets, configMaps)
+	go informerFactory.Start(context.Background().Done())
+	if !cache.WaitForCacheSync(context.Background().Done(), configMaps.HasSynced, secrets.HasSynced) {
+		log.Info("failed to sync informers")
+	}
+
+	return apiFactory
+}
+
 func NewFakeEventRecorder() *FakeEventRecorder {
 	recorder := NewEventRecorder(
 		k8sfake.NewSimpleClientset(),
@@ -98,7 +137,7 @@ func NewFakeEventRecorder() *FakeEventRecorder {
 			},
 			[]string{"name", "namespace", "type", "reason"},
 		),
-		nil,
+		NewFakeApiFactory(),
 	).(*EventRecorderAdapter)
 	recorder.Recorder = record.NewFakeRecorder(1000)
 	fakeRecorder := &FakeEventRecorder{}
@@ -168,38 +207,38 @@ func NewAPIFactorySettings() api.Settings {
 // Send notifications for triggered event if user is subscribed
 func (e *EventRecorderAdapter) sendNotifications(object runtime.Object, opts EventOptions) error {
 	logCtx := logutil.WithObject(object)
-	subsFromAnnotations := subscriptions.Annotations(object.(metav1.Object).GetAnnotations())
-	destByTrigger := subsFromAnnotations.GetDestinations(nil, map[string][]string{})
-
+	notificationsAPI, err := e.apiFactory.GetAPI()
+	if err != nil {
+		// don't return error if notifications are not configured and rollout has no subscribers
+		subsFromAnnotations := subscriptions.Annotations(object.(metav1.Object).GetAnnotations())
+		logCtx.Infof("subsFromAnnotations: %s", subsFromAnnotations)
+		if errors.IsNotFound(err) && len(subsFromAnnotations.GetDestinations(nil, map[string][]string{})) == 0 {
+			return nil
+		}
+		return err
+	}
+	cfg := notificationsAPI.GetConfig()
+	destByTrigger := cfg.GetGlobalDestinations(object.(metav1.Object).GetLabels())
+	destByTrigger.Merge(subscriptions.NewAnnotations(object.(metav1.Object).GetAnnotations()).GetDestinations(cfg.DefaultTriggers, cfg.ServiceDefaultTriggers))
 	trigger := translateReasonToTrigger(opts.EventReason)
-
 	destinations := destByTrigger[trigger]
 	if len(destinations) == 0 {
 		logCtx.Debugf("No configured destinations for trigger: %s", trigger)
 		return nil
 	}
 
-	notificationsAPI, err := e.apiFactory.GetAPI()
-	if err != nil {
-		return err
-	}
-
 	// Creates config for notifications for built-in triggers
-	triggerActions, ok := notificationsAPI.GetConfig().Triggers[trigger]
+	triggerActions, ok := cfg.Triggers[trigger]
 	if !ok {
 		logCtx.Debugf("No configured template for trigger: %s", trigger)
 		return nil
 	}
 
-	objBytes, err := json.Marshal(object)
+	objMap, err := toObjectMap(object)
 	if err != nil {
 		return err
 	}
-	var objMap map[string]interface{}
-	err = json.Unmarshal(objBytes, &objMap)
-	if err != nil {
-		return err
-	}
+
 	for _, dest := range destinations {
 		err = notificationsAPI.Send(objMap, triggerActions[0].Send, dest)
 		if err != nil {
@@ -208,6 +247,53 @@ func (e *EventRecorderAdapter) sendNotifications(object runtime.Object, opts Eve
 		}
 	}
 	return nil
+}
+
+// toObjectMap converts an object to a map for the purposes of sending to the notification engine
+func toObjectMap(object interface{}) (map[string]interface{}, error) {
+	objBytes, err := json.Marshal(object)
+	if err != nil {
+		return nil, err
+	}
+	var objMap map[string]interface{}
+	err = json.Unmarshal(objBytes, &objMap)
+	if err != nil {
+		return nil, err
+	}
+
+	// The JSON marshalling above drops the `spec.template` and `spec.selectors` fields if the rollout
+	// is using workload referencing. The following restores those fields in the returned object map
+	// so that notification templates can refer to them (as if workload ref was not used).
+	if ro, ok := object.(*v1alpha1.Rollout); ok && ro.Spec.WorkloadRef != nil {
+		templateBytes, err := json.Marshal(ro.Spec.Template)
+		if err != nil {
+			return nil, err
+		}
+		var templateMap map[string]interface{}
+		err = json.Unmarshal(templateBytes, &templateMap)
+		if err != nil {
+			return nil, err
+		}
+		err = unstructured.SetNestedMap(objMap, templateMap, "spec", "template")
+		if err != nil {
+			return nil, err
+		}
+
+		selectorBytes, err := json.Marshal(ro.Spec.Selector)
+		if err != nil {
+			return nil, err
+		}
+		var selectorMap map[string]interface{}
+		err = json.Unmarshal(selectorBytes, &selectorMap)
+		if err != nil {
+			return nil, err
+		}
+		err = unstructured.SetNestedMap(objMap, selectorMap, "spec", "selector")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return objMap, nil
 }
 
 func translateReasonToTrigger(reason string) string {

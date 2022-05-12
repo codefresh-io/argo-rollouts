@@ -356,7 +356,7 @@ templates together. The controller combines the `metrics` and `args` fields of a
     The controller will error when merging the templates if:
 
     * Multiple metrics in the templates have the same name
-    * Two arguments with the same name both have values
+    * Two arguments with the same name have different default values no matter the argument value in Rollout
 
 ## Analysis Template Arguments
 
@@ -370,11 +370,11 @@ metadata:
   name: args-example
 spec:
   args:
-  # required
+  # required in Rollout due to no default value
   - name: service-name
   - name: stable-hash
   - name: latest-hash
-  # optional
+  # optional in Rollout given the default value
   - name: api-url
     value: http://example/measure
   # from secret
@@ -428,6 +428,7 @@ spec:
 ```
 Analysis arguments also support valueFrom for reading metadata fields and passing them as arguments to AnalysisTemplate.
 An example would be to reference metadata labels like env and region and passing them along to AnalysisTemplate.
+
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
@@ -457,6 +458,38 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.labels['region']
+```
+
+!!! important
+    Available since v1.2
+Analysis arguments also support valueFrom for reading any field from Rollout status and passing them as arguments to AnalysisTemplate.
+Following example references Rollout status field like aws canaryTargetGroup name and passing them along to AnalysisTemplate
+
+from the Rollout status
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: guestbook
+  labels:
+    appType: demo-app
+    buildType: nginx-app
+    ...
+    env: dev
+    region: us-west-2
+spec:
+...
+  strategy:
+    canary:
+      analysis:
+        templates:
+        - templateName: args-example
+        args:
+        ...
+        - name: canary-targetgroup-name
+          valueFrom:
+            fieldRef:
+              fieldPath: status.alb.canaryTargetGroup.name
 ```
 
 ## BlueGreen Pre Promotion Analysis
@@ -520,13 +553,14 @@ spec:
           value: preview-svc.default.svc.cluster.local
 ```
 
-## Failure Conditions
+## Failure Conditions and Failure Limit
 
-`failureCondition` can be used to cause an analysis run to fail. The following example continually polls a prometheus
-server to get the total number of errors every 5 minutes, causing the analysis run to fail if 10 or more errors were
-encountered.
+`failureCondition` can be used to cause an analysis run to fail.
+`failureLimit` is the maximum number of failed run an analysis is allowed.
+The following example continually polls the defined Prometheus server to get the total number of errors(i.e., HTTP response code >= 500) every 5 minutes, causing the measurement to fail if ten or more errors are encountered.
+The entire analysis run is considered as Failed after three failed measurements.
 
-```yaml hl_lines="4"
+```yaml hl_lines="4 5"
   metrics:
   - name: total-errors
     interval: 5m
@@ -537,8 +571,267 @@ encountered.
         address: http://prometheus.example.com:9090
         query: |
           sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code=~"5.*"}[5m]
+          ))
+```
+
+## Dry-Run Mode
+
+!!! important
+    Available since v1.2
+
+`dryRun` can be used on a metric to control whether or not to evaluate that metric in a dry-run mode. A metric running 
+in the dry-run mode won't impact the final state of the rollout or experiment even if it fails or the evaluation comes 
+out as inconclusive.
+
+The following example queries prometheus every 5 minutes to get the total number of 4XX and 5XX errors, and even if the
+evaluation of the metric to monitor the 5XX error-rate fail, the analysis run will pass.
+
+```yaml hl_lines="1 2"
+  dryRun:
+  - metricName: total-5xx-errors
+  metrics:
+  - name: total-5xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
             istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"5.*"}[5m]
           ))
+  - name: total-4xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"4.*"}[5m]
+          ))
+```
+
+RegEx matches are also supported. `.*` can be used to make all the metrics run in the dry-run mode. In the following 
+example, even if one or both metrics fail, the analysis run will pass.
+
+```yaml hl_lines="1 2"
+  dryRun:
+  - metricName: .*
+  metrics:
+  - name: total-5xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"5.*"}[5m]
+          ))
+  - name: total-4xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"4.*"}[5m]
+          ))
+```
+
+### Dry-Run Summary
+
+If one or more metrics are running in the dry-run mode, the summary of the dry-run results gets appended to the analysis 
+run message. Assuming that the `total-4xx-errors` metric fails in the above example but, the `total-5xx-errors` 
+succeeds, the final dry-run summary will look like this.
+
+```yaml hl_lines="4 5 6 7"
+Message: Run Terminated
+Run Summary:
+  ...
+Dry Run Summary: 
+  Count: 2
+  Successful: 1
+  Failed: 1
+Metric Results:
+...
+```
+
+### Dry-Run Rollouts
+
+If a rollout wants to dry run its analysis, it simply needs to specify the `dryRun` field to its `analysis` stanza. In the 
+following example, all the metrics from `random-fail` and `always-pass` get merged and executed in the dry-run mode.
+
+```yaml hl_lines="9 10"
+kind: Rollout
+spec:
+...
+  steps:
+  - analysis:
+      templates:
+      - templateName: random-fail
+      - templateName: always-pass
+      dryRun:
+      - metricName: .*
+```
+
+### Dry-Run Experiments
+
+If an experiment wants to dry run its analysis, it simply needs to specify the `dryRun` field under its specs. In the 
+following example, all the metrics from `analyze-job` matching the RegEx rule `test.*` will be executed in the dry-run 
+mode.
+
+```yaml hl_lines="20 21"
+kind: Experiment
+spec:
+  templates:
+  - name: baseline
+    selector:
+      matchLabels:
+        app: rollouts-demo
+    template:
+      metadata:
+        labels:
+          app: rollouts-demo
+      spec:
+        containers:
+        - name: rollouts-demo
+          image: argoproj/rollouts-demo:blue
+  analyses:
+  - name: analyze-job
+    templateName: analyze-job
+  dryRun:
+  - metricName: test.*
+```
+
+## Measurements Retention
+
+!!! important
+    Available since v1.2
+
+`measurementRetention` can be used to retain other than the latest ten results for the metrics running in any mode 
+(dry/non-dry). Setting this option to `0` would disable it and, the controller will revert to the existing behavior of 
+retaining the latest ten measurements.
+
+The following example queries Prometheus every 5 minutes to get the total number of 4XX and 5XX errors and retains the 
+latest twenty measurements for the 5XX metric run results instead of the default ten.
+
+```yaml hl_lines="1 2 3"
+  measurementRetention:
+  - metricName: total-5xx-errors
+    limit: 20
+  metrics:
+  - name: total-5xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"5.*"}[5m]
+          ))
+  - name: total-4xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"4.*"}[5m]
+          ))
+```
+
+RegEx matches are also supported. `.*` can be used to apply the same retention rule to all the metrics. In the following 
+example, the controller will retain the latest twenty run results for all the metrics instead of the default ten results.
+
+```yaml hl_lines="1 2 3"
+  measurementRetention:
+  - metricName: .*
+    limit: 20
+  metrics:
+  - name: total-5xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"5.*"}[5m]
+          ))
+  - name: total-4xx-errors
+    interval: 5m
+    failureCondition: result[0] >= 10
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.example.com:9090
+        query: |
+          sum(irate(
+            istio_requests_total{reporter="source",destination_service=~"{{args.service-name}}",response_code~"4.*"}[5m]
+          ))
+```
+
+### Measurements Retention for Rollouts Analysis
+
+If a rollout wants to retain more results of its analysis metrics, it simply needs to specify the `measurementRetention` 
+field to its `analysis` stanza. In the following example, all the metrics from `random-fail` and `always-pass` get 
+merged, and their latest twenty measurements get retained instead of the default ten.
+
+```yaml hl_lines="9 10 11"
+kind: Rollout
+spec:
+...
+  steps:
+  - analysis:
+      templates:
+      - templateName: random-fail
+      - templateName: always-pass
+      measurementRetention:
+      - metricName: .*
+        limit: 20
+```
+
+### Measurements Retention for Experiments
+
+If an experiment wants to retain more results of its analysis metrics, it simply needs to specify the 
+`measurementRetention` field under its specs. In the following example, all the metrics from `analyze-job` matching the 
+RegEx rule `test.*` will have their latest twenty measurements get retained instead of the default ten.
+
+```yaml hl_lines="20 21 22"
+kind: Experiment
+spec:
+  templates:
+  - name: baseline
+    selector:
+      matchLabels:
+        app: rollouts-demo
+    template:
+      metadata:
+        labels:
+          app: rollouts-demo
+      spec:
+        containers:
+        - name: rollouts-demo
+          image: argoproj/rollouts-demo:blue
+  analyses:
+  - name: analyze-job
+    templateName: analyze-job
+  measurementRetention:
+  - metricName: test.*
+    limit: 20
 ```
 
 ## Inconclusive Runs

@@ -9,16 +9,19 @@ import (
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/argoproj/argo-rollouts/utils/evaluate"
 	metricutil "github.com/argoproj/argo-rollouts/utils/metric"
+	timeutil "github.com/argoproj/argo-rollouts/utils/time"
 )
 
 const (
-	//ProviderType indicates the provider is prometheus
+	// ProviderType indicates the provider is prometheus
 	ProviderType = "Prometheus"
+	// ResolvedPrometheusQuery is used as the key for storing the resolved prometheus query in the metrics result
+	// metadata object.
+	ResolvedPrometheusQuery = "ResolvedPrometheusQuery"
 )
 
 // Provider contains all the required components to run a prometheus query
@@ -32,9 +35,18 @@ func (p *Provider) Type() string {
 	return ProviderType
 }
 
+// GetMetadata returns any additional metadata which needs to be stored & displayed as part of the metrics result.
+func (p *Provider) GetMetadata(metric v1alpha1.Metric) map[string]string {
+	metricsMetadata := make(map[string]string)
+	if metric.Provider.Prometheus.Query != "" {
+		metricsMetadata[ResolvedPrometheusQuery] = metric.Provider.Prometheus.Query
+	}
+	return metricsMetadata
+}
+
 // Run queries prometheus for the metric
 func (p *Provider) Run(run *v1alpha1.AnalysisRun, metric v1alpha1.Metric) v1alpha1.Measurement {
-	startTime := metav1.Now()
+	startTime := timeutil.MetaNow()
 	newMeasurement := v1alpha1.Measurement{
 		StartedAt: &startTime,
 	}
@@ -67,7 +79,7 @@ func (p *Provider) Run(run *v1alpha1.AnalysisRun, metric v1alpha1.Metric) v1alph
 	}
 
 	newMeasurement.Phase = newStatus
-	finishedTime := metav1.Now()
+	finishedTime := timeutil.MetaNow()
 	newMeasurement.FinishedAt = &finishedTime
 	return newMeasurement
 }

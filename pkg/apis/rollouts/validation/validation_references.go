@@ -3,21 +3,21 @@ package validation
 import (
 	"fmt"
 
-	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
-	"github.com/argoproj/argo-rollouts/utils/conditions"
-	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
-	serviceutil "github.com/argoproj/argo-rollouts/utils/service"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	ingressutil "github.com/argoproj/argo-rollouts/utils/ingress"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/ambassador"
+	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/appmesh"
 	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/istio"
+	analysisutil "github.com/argoproj/argo-rollouts/utils/analysis"
+	"github.com/argoproj/argo-rollouts/utils/conditions"
+	ingressutil "github.com/argoproj/argo-rollouts/utils/ingress"
+	istioutil "github.com/argoproj/argo-rollouts/utils/istio"
+	serviceutil "github.com/argoproj/argo-rollouts/utils/service"
 )
 
 // Controller will validate references in reconciliation
@@ -46,6 +46,8 @@ type ServiceType string
 const (
 	StableService  ServiceType = "StableService"
 	CanaryService  ServiceType = "CanaryService"
+	PingService    ServiceType = "PingService"
+	PongService    ServiceType = "PongService"
 	ActiveService  ServiceType = "ActiveService"
 	PreviewService ServiceType = "PreviewService"
 )
@@ -61,6 +63,7 @@ type ReferencedResources struct {
 	ServiceWithType           []ServiceWithType
 	VirtualServices           []unstructured.Unstructured
 	AmbassadorMappings        []unstructured.Unstructured
+	AppMeshResources          []unstructured.Unstructured
 }
 
 func ValidateRolloutReferencedResources(rollout *v1alpha1.Rollout, referencedResources ReferencedResources) field.ErrorList {
@@ -80,6 +83,9 @@ func ValidateRolloutReferencedResources(rollout *v1alpha1.Rollout, referencedRes
 	for _, mapping := range referencedResources.AmbassadorMappings {
 		allErrs = append(allErrs, ValidateAmbassadorMapping(mapping)...)
 	}
+	for _, appmeshRes := range referencedResources.AppMeshResources {
+		allErrs = append(allErrs, ValidateAppMeshResource(appmeshRes)...)
+	}
 	return allErrs
 }
 
@@ -91,6 +97,19 @@ func ValidateService(svc ServiceWithType, rollout *v1alpha1.Rollout) field.Error
 	}
 
 	service := svc.Service
+
+	// Verify the service selector labels matches rollout's, except for DefaultRolloutUniqueLabelKey
+	for svcLabelKey, svcLabelValue := range service.Spec.Selector {
+		if svcLabelKey == v1alpha1.DefaultRolloutUniqueLabelKey {
+			continue
+		}
+		if v, ok := rollout.Spec.Template.Labels[svcLabelKey]; !ok || v != svcLabelValue {
+			msg := fmt.Sprintf("Service %q has unmatch lable %q in rollout", service.Name, svcLabelKey)
+			fmt.Println(msg)
+			allErrs = append(allErrs, field.Invalid(fldPath, service.Name, msg))
+		}
+	}
+
 	rolloutManagingService, exists := serviceutil.HasManagedByAnnotation(service)
 	if exists && rolloutManagingService != rollout.Name {
 		msg := fmt.Sprintf(conditions.ServiceReferencingManagedService, service.Name)
@@ -108,10 +127,22 @@ func ValidateAnalysisTemplatesWithType(rollout *v1alpha1.Rollout, templates Anal
 
 	templateNames := GetAnalysisTemplateNames(templates)
 	value := fmt.Sprintf("templateNames: %s", templateNames)
-	_, err := analysisutil.NewAnalysisRunFromTemplates(templates.AnalysisTemplates, templates.ClusterAnalysisTemplates, buildAnalysisArgs(templates.Args, rollout), "", "", "")
+	_, err := analysisutil.NewAnalysisRunFromTemplates(templates.AnalysisTemplates, templates.ClusterAnalysisTemplates, buildAnalysisArgs(templates.Args, rollout), []v1alpha1.DryRun{}, []v1alpha1.MeasurementRetention{}, "", "", "")
 	if err != nil {
 		allErrs = append(allErrs, field.Invalid(fldPath, value, err.Error()))
 		return allErrs
+	}
+
+	if rollout.Spec.Strategy.Canary != nil {
+		for _, step := range rollout.Spec.Strategy.Canary.Steps {
+			if step.Analysis != nil {
+				_, err := analysisutil.NewAnalysisRunFromTemplates(templates.AnalysisTemplates, templates.ClusterAnalysisTemplates, buildAnalysisArgs(templates.Args, rollout), step.Analysis.DryRun, step.Analysis.MeasurementRetention, "", "", "")
+				if err != nil {
+					allErrs = append(allErrs, field.Invalid(fldPath, value, err.Error()))
+					return allErrs
+				}
+			}
+		}
 	}
 
 	for _, template := range templates.AnalysisTemplates {
@@ -308,6 +339,57 @@ func ValidateAmbassadorMapping(obj unstructured.Unstructured) field.ErrorList {
 	return allErrs
 }
 
+func ValidateAppMeshResource(obj unstructured.Unstructured) field.ErrorList {
+	if obj.GetKind() != "VirtualRouter" {
+		fldPath := field.NewPath("kind")
+		msg := fmt.Sprintf("Expected object kind to be VirtualRouter but is %s", obj.GetKind())
+		return field.ErrorList{field.Invalid(fldPath, obj.GetKind(), msg)}
+	}
+
+	err := ValidateAppMeshVirtualRouter(&obj)
+	if err != nil {
+		return field.ErrorList{err}
+	}
+	return field.ErrorList{}
+}
+
+func ValidateAppMeshVirtualRouter(vrouter *unstructured.Unstructured) *field.Error {
+	routesFldPath := field.NewPath("spec", "routes")
+	allRoutesI, found, err := unstructured.NestedSlice(vrouter.Object, "spec", "routes")
+	if !found || err != nil || len(allRoutesI) == 0 {
+		msg := fmt.Sprintf("No routes defined for AppMesh virtual-router %s", vrouter.GetName())
+		return field.Invalid(routesFldPath, vrouter.GetName(), msg)
+	}
+	for idx, routeI := range allRoutesI {
+		routeFldPath := routesFldPath.Index(idx)
+		route, ok := routeI.(map[string]interface{})
+		if !ok {
+			msg := fmt.Sprintf("Invalid route was found for AppMesh virtual-router %s at index %d", vrouter.GetName(), idx)
+			return field.Invalid(routeFldPath, vrouter.GetName(), msg)
+		}
+
+		routeName := route["name"]
+		routeRule, routeType, err := appmesh.GetRouteRule(route)
+		if err != nil {
+			msg := fmt.Sprintf("Error getting route details for AppMesh virtual-router %s and route %s. Error: %s", vrouter.GetName(), routeName, err.Error())
+			return field.Invalid(routeFldPath, vrouter.GetName(), msg)
+		}
+
+		weightedTargetsFldPath := routeFldPath.Child(routeType).Child("action").Child("weightedTargets")
+		weightedTargets, found, err := unstructured.NestedSlice(routeRule, "action", "weightedTargets")
+		if !found || err != nil {
+			msg := fmt.Sprintf("Invalid route action found for AppMesh virtual-router %s and route %s", vrouter.GetName(), routeName)
+			return field.Invalid(weightedTargetsFldPath, vrouter.GetName(), msg)
+		}
+
+		if len(weightedTargets) != 2 {
+			msg := fmt.Sprintf("Invalid number of weightedTargets (%d) for AppMesh virtual-router %s and route %s, expected 2", len(weightedTargets), vrouter.GetName(), routeName)
+			return field.Invalid(weightedTargetsFldPath, vrouter.GetName(), msg)
+		}
+	}
+	return nil
+}
+
 func GetServiceWithTypeFieldPath(serviceType ServiceType) *field.Path {
 	fldPath := field.NewPath("spec", "strategy")
 	switch serviceType {
@@ -319,6 +401,10 @@ func GetServiceWithTypeFieldPath(serviceType ServiceType) *field.Path {
 		fldPath = fldPath.Child("canary", "canaryService")
 	case StableService:
 		fldPath = fldPath.Child("canary", "stableService")
+	case PingService:
+		fldPath = fldPath.Child("canary", "pingPong", "pingService")
+	case PongService:
+		fldPath = fldPath.Child("canary", "pingPong", "pongService")
 	default:
 		return nil
 	}
@@ -369,7 +455,8 @@ func buildAnalysisArgs(args []v1alpha1.AnalysisRunArgument, r *v1alpha1.Rollout)
 			},
 		},
 	}
-	return analysisutil.BuildArgumentsForRolloutAnalysisRun(args, &stableRSDummy, &newRSDummy, r)
+	res, _ := analysisutil.BuildArgumentsForRolloutAnalysisRun(args, &stableRSDummy, &newRSDummy, r)
+	return res
 }
 
 // validateAnalysisMetrics validates the metrics of an Analysis object

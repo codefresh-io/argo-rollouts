@@ -20,6 +20,7 @@ import (
 // +kubebuilder:printcolumn:name="Current",type="integer",JSONPath=".status.replicas",description="Total number of non-terminated pods targeted by this rollout"
 // +kubebuilder:printcolumn:name="Up-to-date",type="integer",JSONPath=".status.updatedReplicas",description="Total number of non-terminated pods targeted by this rollout that have the desired template spec"
 // +kubebuilder:printcolumn:name="Available",type="integer",JSONPath=".status.availableReplicas",description="Total number of available pods (ready for at least minReadySeconds) targeted by this rollout"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="Time since resource was created"
 // +kubebuilder:subresource:status
 
 // Rollout is a specification for a Rollout resource
@@ -304,6 +305,16 @@ type CanaryStrategy struct {
 	// scaling down the stable as traffic is increased to canary. When disabled (the default behavior)
 	// the stable ReplicaSet remains fully scaled to support instantaneous aborts.
 	DynamicStableScale bool `json:"dynamicStableScale,omitempty" protobuf:"varint,14,opt,name=dynamicStableScale"`
+	// PingPongSpec holds the ping and pong services
+	PingPong *PingPongSpec `json:"pingPong,omitempty" protobuf:"varint,15,opt,name=pingPong"`
+}
+
+// PingPongSpec holds the ping and pong service name.
+type PingPongSpec struct {
+	// name of the ping service
+	PingService string `json:"pingService" protobuf:"bytes,1,opt,name=pingService"`
+	// name of the pong service
+	PongService string `json:"pongService" protobuf:"bytes,2,opt,name=pongService"`
 }
 
 // AnalysisRunStrategy configuration for the analysis runs and experiments to retain
@@ -323,9 +334,17 @@ type ALBTrafficRouting struct {
 	ServicePort int32 `json:"servicePort" protobuf:"varint,2,opt,name=servicePort"`
 	// RootService references the service in the ingress to the controller should add the action to
 	RootService string `json:"rootService,omitempty" protobuf:"bytes,3,opt,name=rootService"`
+	// AdditionalForwardConfig allows to specify further settings on the ForwaredConfig
+	// +optional
+	StickinessConfig *StickinessConfig `json:"stickinessConfig,omitempty" protobuf:"bytes,5,opt,name=stickinessConfig"`
 	// AnnotationPrefix has to match the configured annotation prefix on the alb ingress controller
 	// +optional
 	AnnotationPrefix string `json:"annotationPrefix,omitempty" protobuf:"bytes,4,opt,name=annotationPrefix"`
+}
+
+type StickinessConfig struct {
+	Enabled         bool  `json:"enabled" protobuf:"varint,1,opt,name=enabled"`
+	DurationSeconds int64 `json:"durationSeconds" protobuf:"varint,2,opt,name=durationSeconds"`
 }
 
 // RolloutTrafficRouting hosts all the different configuration for supported service meshes to enable more fine-grained traffic routing
@@ -340,6 +359,8 @@ type RolloutTrafficRouting struct {
 	SMI *SMITrafficRouting `json:"smi,omitempty" protobuf:"bytes,4,opt,name=smi"`
 	// Ambassador holds specific configuration to use Ambassador to route traffic
 	Ambassador *AmbassadorTrafficRouting `json:"ambassador,omitempty" protobuf:"bytes,5,opt,name=ambassador"`
+	// AppMesh holds specific configuration to use AppMesh to route traffic
+	AppMesh *AppMeshTrafficRouting `json:"appMesh,omitempty" protobuf:"bytes,6,opt,name=appMesh"`
 }
 
 // AmbassadorTrafficRouting defines the configuration required to use Ambassador as traffic
@@ -407,6 +428,36 @@ type IstioDestinationRule struct {
 	CanarySubsetName string `json:"canarySubsetName" protobuf:"bytes,2,opt,name=canarySubsetName"`
 	// StableSubsetName is the subset name to modify labels with stable ReplicaSet pod template hash value
 	StableSubsetName string `json:"stableSubsetName" protobuf:"bytes,3,opt,name=stableSubsetName"`
+}
+
+// AppMeshTrafficRouting configuration for AWS AppMesh service mesh to enable fine grain configuration
+type AppMeshTrafficRouting struct {
+	// VirtualService references an AppMesh VirtualService and VirtualRouter to modify to shape traffic
+	VirtualService *AppMeshVirtualService `json:"virtualService,omitempty" protobuf:"bytes,1,opt,name=virtualService"`
+	// VirtualNodeGroup references an AppMesh Route targets that are formed by a set of VirtualNodes that are used to shape traffic
+	VirtualNodeGroup *AppMeshVirtualNodeGroup `json:"virtualNodeGroup,omitempty" protobuf:"bytes,2,opt,name=virtualNodeGroup"`
+}
+
+// AppMeshVirtualService holds information on the virtual service the rollout needs to modify
+type AppMeshVirtualService struct {
+	// Name is the name of virtual service
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Routes is list of HTTP routes within virtual router associated with virtual service to edit. If omitted, virtual service must have a single route of this type.
+	Routes []string `json:"routes,omitempty" protobuf:"bytes,2,rep,name=routes"`
+}
+
+// AppMeshVirtualNodeGroup holds information about targets used for routing traffic to a virtual service
+type AppMeshVirtualNodeGroup struct {
+	// CanaryVirtualNodeRef is the virtual node ref to modify labels with canary ReplicaSet pod template hash value
+	CanaryVirtualNodeRef *AppMeshVirtualNodeReference `json:"canaryVirtualNodeRef" protobuf:"bytes,1,opt,name=canaryVirtualNodeRef"`
+	// StableVirtualNodeRef is the virtual node name to modify labels with stable ReplicaSet pod template hash value
+	StableVirtualNodeRef *AppMeshVirtualNodeReference `json:"stableVirtualNodeRef" protobuf:"bytes,2,opt,name=stableVirtualNodeRef"`
+}
+
+// AppMeshVirtualNodeReference holds a reference to VirtualNode.appmesh.k8s.aws
+type AppMeshVirtualNodeReference struct {
+	// Name is the name of VirtualNode CR
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 }
 
 // RolloutExperimentStep defines a template that is used to create a experiment for a step
@@ -526,6 +577,16 @@ type RolloutAnalysis struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Args []AnalysisRunArgument `json:"args,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=args"`
+	// DryRun object contains the settings for running the analysis in Dry-Run mode
+	// +patchMergeKey=metricName
+	// +patchStrategy=merge
+	// +optional
+	DryRun []DryRun `json:"dryRun,omitempty" patchStrategy:"merge" patchMergeKey:"metricName" protobuf:"bytes,3,rep,name=dryRun"`
+	// MeasurementRetention object contains the settings for retaining the number of measurements during the analysis
+	// +patchMergeKey=metricName
+	// +patchStrategy=merge
+	// +optional
+	MeasurementRetention []MeasurementRetention `json:"measurementRetention,omitempty" patchStrategy:"merge" patchMergeKey:"metricName" protobuf:"bytes,4,rep,name=measurementRetention"`
 }
 
 type RolloutAnalysisTemplate struct {
@@ -665,7 +726,11 @@ const (
 type RolloutStatus struct {
 	// Abort cancel the current rollout progression
 	Abort bool `json:"abort,omitempty" protobuf:"varint,1,opt,name=abort"`
-	// PauseConditions indicates why the rollout is currently paused
+	// PauseConditions is a list of reasons why rollout became automatically paused (e.g.
+	// CanaryPauseStep, BlueGreenPause, InconclusiveAnalysis). The items in this list are populated
+	// by the controller but are cleared by the user (e.g. plugin, argo-cd resume action) when they
+	// wish to unpause. If pause conditions is empty, but controllerPause is true, it indicates
+	// the user manually unpaused the Rollout
 	PauseConditions []PauseCondition `json:"pauseConditions,omitempty" protobuf:"bytes,2,rep,name=pauseConditions"`
 	// ControllerPause indicates the controller has paused the rollout. It is set to true when
 	// the controller adds a pause condition. This field helps to discern the scenario where a
@@ -709,9 +774,6 @@ type RolloutStatus struct {
 	// The generation observed by the rollout controller from metadata.generation
 	// +optional
 	ObservedGeneration string `json:"observedGeneration,omitempty" protobuf:"bytes,13,opt,name=observedGeneration"`
-	// The generation of referenced workload observed by the rollout controller
-	// +optional
-	WorkloadObservedGeneration string `json:"workloadObservedGeneration,omitempty" protobuf:"bytes,24,opt,name=workloadObservedGeneration"`
 	// Conditions a list of conditions a rollout can have.
 	// +optional
 	Conditions []RolloutCondition `json:"conditions,omitempty" protobuf:"bytes,14,rep,name=conditions"`
@@ -738,6 +800,11 @@ type RolloutStatus struct {
 	Phase RolloutPhase `json:"phase,omitempty" protobuf:"bytes,22,opt,name=phase,casttype=RolloutPhase"`
 	// Message provides details on why the rollout is in its current phase
 	Message string `json:"message,omitempty" protobuf:"bytes,23,opt,name=message"`
+	// The generation of referenced workload observed by the rollout controller
+	// +optional
+	WorkloadObservedGeneration string `json:"workloadObservedGeneration,omitempty" protobuf:"bytes,24,opt,name=workloadObservedGeneration"`
+	/// ALB keeps information regarding the ALB and TargetGroups
+	ALB *ALBStatus `json:"alb,omitempty" protobuf:"bytes,25,opt,name=alb"`
 }
 
 // BlueGreenStatus status fields that only pertain to the blueGreen rollout
@@ -767,7 +834,16 @@ type CanaryStatus struct {
 	CurrentExperiment string `json:"currentExperiment,omitempty" protobuf:"bytes,3,opt,name=currentExperiment"`
 	// Weights records the weights which have been set on traffic provider. Only valid when using traffic routing
 	Weights *TrafficWeights `json:"weights,omitempty" protobuf:"bytes,4,opt,name=weights"`
+	// StablePingPong For the ping-pong feature holds the current stable service, ping or pong
+	StablePingPong PingPongType `json:"stablePingPong,omitempty" protobuf:"bytes,5,opt,name=stablePingPong"`
 }
+
+type PingPongType string
+
+const (
+	PPPing PingPongType = "ping"
+	PPPong PingPongType = "pong"
+)
 
 // TrafficWeights describes the current status of how traffic has been split
 type TrafficWeights struct {
@@ -795,6 +871,17 @@ type RolloutAnalysisRunStatus struct {
 	Name    string        `json:"name" protobuf:"bytes,1,opt,name=name"`
 	Status  AnalysisPhase `json:"status" protobuf:"bytes,2,opt,name=status,casttype=AnalysisPhase"`
 	Message string        `json:"message,omitempty" protobuf:"bytes,3,opt,name=message"`
+}
+
+type ALBStatus struct {
+	LoadBalancer      AwsResourceRef `json:"loadBalancer,omitempty" protobuf:"bytes,1,opt,name=loadBalancer"`
+	CanaryTargetGroup AwsResourceRef `json:"canaryTargetGroup,omitempty" protobuf:"bytes,2,opt,name=canaryTargetGroup"`
+	StableTargetGroup AwsResourceRef `json:"stableTargetGroup,omitempty" protobuf:"bytes,3,opt,name=stableTargetGroup"`
+}
+
+type AwsResourceRef struct {
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	ARN  string `json:"arn" protobuf:"bytes,2,opt,name=arn"`
 }
 
 // RolloutConditionType defines the conditions of Rollout
