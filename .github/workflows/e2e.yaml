@@ -25,7 +25,17 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Checkout code of Argo
+        uses: actions/checkout@v3
+        with:
+          repository: argoproj/${{ github.event.repository.name }}
+          path: argo
+          ref: ${{ github.base_ref }}
+      - name: Replace test directory by Argo code
+        run: |
+          cp -r argo/test test
       - name: Setup k3s
         run: |
           curl -sfL https://get.k3s.io | sh -
