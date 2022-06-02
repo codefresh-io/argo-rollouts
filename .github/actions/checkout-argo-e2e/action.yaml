@@ -7,9 +7,9 @@ runs:
     - name: Checkout code of Argo
       uses: actions/checkout@v3
       with:
-        repository: argoproj/${{ github.event.repository.name }}
+        repository: argoproj/argo-rollouts
         path: argo
-        ref: ${{ github.base_ref }}
+        ref: release-1.2
     - name: Replace test directory by Argo code
-      run: cp -r argo/test test
+      run: cp -r argo/test test && rm -rf argo
       shell: bash
