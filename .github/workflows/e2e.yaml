@@ -17,6 +17,7 @@ on:
         default: false
 
 jobs:
+
   test-e2e:
     name: Run end-to-end tests
     runs-on: ubuntu-latest
