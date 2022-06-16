@@ -20,7 +20,7 @@ DEV_IMAGE=false
 
 # E2E variables
 E2E_INSTANCE_ID ?= argo-rollouts-e2e
-E2E_TEST_OPTIONS ?= 
+E2E_TEST_OPTIONS ?=
 E2E_PARALLEL ?= 4
 
 override LDFLAGS += \
@@ -211,6 +211,7 @@ start-e2e:
 
 .PHONY: test-e2e
 test-e2e:
+    if []
 	go test -timeout 30m -v -count 1 --tags e2e -p ${E2E_PARALLEL} --short ./test/e2e ${E2E_TEST_OPTIONS}
 
 .PHONY: coverage
