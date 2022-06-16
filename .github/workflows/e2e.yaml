@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Check out Argo code
         uses: ./.github/actions/checkout-argo-e2e
-        if ${{ matrix.project == 'argo' }}
+        if: ${{ matrix.project == 'argo' }}
       - name: Setup k3s
         run: |
           curl -sfL https://get.k3s.io | sh -
