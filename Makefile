@@ -211,7 +211,6 @@ start-e2e:
 
 .PHONY: test-e2e
 test-e2e:
-    if []
 	go test -timeout 30m -v -count 1 --tags e2e -p ${E2E_PARALLEL} --short ./test/e2e ${E2E_TEST_OPTIONS}
 
 .PHONY: coverage
