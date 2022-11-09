@@ -49,9 +49,8 @@ jobs:
       - name: Run e2e tests
         run: make test-e2e
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled) }}
-      - name: Upload e2e-controller logs
+      - name: Upload e2e-controller logs     # Codefresh changes
         uses: actions/upload-artifact@v2
         with:
           name: e2e-controller-k8s.log
           path: /tmp/e2e-controller.log
-        if: ${{ failure() }}
