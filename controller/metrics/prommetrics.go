@@ -58,6 +58,13 @@ var (
 		nil,
 	)
 
+	MetricRolloutInfoReplicasUpdated = prometheus.NewDesc(
+		"rollout_info_replicas_updated",
+		"The number of updated replicas per rollout.",
+		namespaceNameLabels,
+		nil,
+	)
+
 	MetricRolloutEventsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "rollout_events_total",
@@ -172,6 +179,34 @@ var (
 		"Information on the state of the experiment (DEPRECATED - use experiment_info)",
 		append(namespaceNameLabels, "phase"),
 		nil,
+	)
+)
+
+// Notification metrics
+var (
+	MetricNotificationSuccessTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "notification_send_success",
+			Help: "Notification send success.",
+		},
+		append(namespaceNameLabels, "type", "reason"),
+	)
+
+	MetricNotificationFailedTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "notification_send_error",
+			Help: "Error sending the notification",
+		},
+		append(namespaceNameLabels, "type", "reason"),
+	)
+
+	MetricNotificationSend = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "notification_send",
+			Help:    "Notification send performance.",
+			Buckets: []float64{0.01, 0.15, .25, .5, 1},
+		},
+		namespaceNameLabels,
 	)
 )
 

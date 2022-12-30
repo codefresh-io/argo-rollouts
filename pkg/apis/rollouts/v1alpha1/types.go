@@ -56,6 +56,9 @@ type RolloutSpec struct {
 	// Defaults to 0 (pod will be considered available as soon as it is ready)
 	// +optional
 	MinReadySeconds int32 `json:"minReadySeconds,omitempty" protobuf:"varint,4,opt,name=minReadySeconds"`
+	// The window in which a rollback will be fast tracked (fully promoted)
+	// +optional
+	RollbackWindow *RollbackWindowSpec `json:"rollbackWindow,omtempty" protobuf:"bytes,13,opt,name=rollbackWindow"`
 	// The deployment strategy to use to replace existing pods with new ones.
 	// +optional
 	Strategy RolloutStrategy `json:"strategy" protobuf:"bytes,5,opt,name=strategy"`
@@ -71,7 +74,7 @@ type RolloutSpec struct {
 	// Defaults to 600s.
 	ProgressDeadlineSeconds *int32 `json:"progressDeadlineSeconds,omitempty" protobuf:"varint,8,opt,name=progressDeadlineSeconds"`
 	// ProgressDeadlineAbort is whether to abort the update when ProgressDeadlineSeconds
-	// is exceeded if analysis is not used. Default is false.
+	// is exceeded.
 	// +optional
 	ProgressDeadlineAbort bool `json:"progressDeadlineAbort,omitempty" protobuf:"varint,12,opt,name=progressDeadlineAbort"`
 	// RestartAt indicates when all the pods of a Rollout should be restarted
@@ -307,6 +310,9 @@ type CanaryStrategy struct {
 	DynamicStableScale bool `json:"dynamicStableScale,omitempty" protobuf:"varint,14,opt,name=dynamicStableScale"`
 	// PingPongSpec holds the ping and pong services
 	PingPong *PingPongSpec `json:"pingPong,omitempty" protobuf:"varint,15,opt,name=pingPong"`
+	// Assuming the desired number of pods in a stable or canary ReplicaSet is not zero, then make sure it is at least
+	// MinPodsPerReplicaSet for High Availability. Only applicable for TrafficRoutedCanary
+	MinPodsPerReplicaSet *int32 `json:"minPodsPerReplicaSet,omitempty" protobuf:"varint,16,opt,name=minPodsPerReplicaSet"`
 }
 
 // PingPongSpec holds the ping and pong service name.
@@ -361,6 +367,39 @@ type RolloutTrafficRouting struct {
 	Ambassador *AmbassadorTrafficRouting `json:"ambassador,omitempty" protobuf:"bytes,5,opt,name=ambassador"`
 	// AppMesh holds specific configuration to use AppMesh to route traffic
 	AppMesh *AppMeshTrafficRouting `json:"appMesh,omitempty" protobuf:"bytes,6,opt,name=appMesh"`
+	// Traefik holds specific configuration to use Traefik to route traffic
+	Traefik *TraefikTrafficRouting `json:"traefik,omitempty" protobuf:"bytes,7,opt,name=traefik"`
+	// A list of HTTP routes that Argo Rollouts manages, the order of this array also becomes the precedence in the upstream
+	// traffic router.
+	ManagedRoutes []MangedRoutes `json:"managedRoutes,omitempty" protobuf:"bytes,8,rep,name=managedRoutes"`
+	// Apisix holds specific configuration to use Apisix to route traffic
+	Apisix *ApisixTrafficRouting `json:"apisix,omitempty" protobuf:"bytes,9,opt,name=apisix"`
+}
+
+type MangedRoutes struct {
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	//Possibly name for future use
+	//canaryRoute bool
+}
+
+// TraefikTrafficRouting defines the configuration required to use Traefik as traffic router
+type TraefikTrafficRouting struct {
+	// TraefikServiceName refer to the name of the Traefik service used to route traffic to the service
+	WeightedTraefikServiceName string `json:"weightedTraefikServiceName" protobuf:"bytes,1,name=weightedTraefikServiceName"`
+}
+
+// ApisixTrafficRouting defines the configuration required to use APISIX as traffic router
+type ApisixTrafficRouting struct {
+	// Route references an Apisix Route to modify to shape traffic
+	Route *ApisixRoute `json:"route,omitempty" protobuf:"bytes,1,opt,name=route"`
+}
+
+// ApisixRoute holds information on the APISIX Route the rollout needs to modify
+type ApisixRoute struct {
+	// Name refer to the name of the APISIX Route used to route traffic to the service
+	Name string `json:"name" protobuf:"bytes,1,name=name"`
+	// RuleRef a list of the APISIX Route HTTP Rules used to route traffic to the service
+	Rules []string `json:"rules,omitempty" protobuf:"bytes,2,rep,name=rules"`
 }
 
 // AmbassadorTrafficRouting defines the configuration required to use Ambassador as traffic
@@ -410,6 +449,8 @@ type IstioVirtualService struct {
 	Routes []string `json:"routes,omitempty" protobuf:"bytes,2,rep,name=routes"`
 	// A list of TLS/HTTPS routes within VirtualService to edit. If omitted, VirtualService must have a single route of this type.
 	TLSRoutes []TLSRoute `json:"tlsRoutes,omitempty" protobuf:"bytes,3,rep,name=tlsRoutes"`
+	// A list of TCP routes within VirtualService to edit. If omitted, VirtualService must have a single route of this type.
+	TCPRoutes []TCPRoute `json:"tcpRoutes,omitempty" protobuf:"bytes,4,rep,name=tcpRoutes"`
 }
 
 // TLSRoute holds the information on the virtual service's TLS/HTTPS routes that are desired to be matched for changing weights.
@@ -418,6 +459,12 @@ type TLSRoute struct {
 	Port int64 `json:"port,omitempty" protobuf:"bytes,1,opt,name=port"`
 	// A list of all the SNI Hosts of the TLS Route desired to be matched in the given Istio VirtualService.
 	SNIHosts []string `json:"sniHosts,omitempty" protobuf:"bytes,2,rep,name=sniHosts"`
+}
+
+// TCPRoute holds the information on the virtual service's TCP routes that are desired to be matched for changing weights.
+type TCPRoute struct {
+	// Port number of the TCP Route desired to be matched in the given Istio VirtualService.
+	Port int64 `json:"port,omitempty" protobuf:"bytes,1,opt,name=port"`
 }
 
 // IstioDestinationRule is a reference to an Istio DestinationRule to modify and shape traffic
@@ -546,6 +593,63 @@ type CanaryStep struct {
 	// SetCanaryScale defines how to scale the newRS without changing traffic weight
 	// +optional
 	SetCanaryScale *SetCanaryScale `json:"setCanaryScale,omitempty" protobuf:"bytes,5,opt,name=setCanaryScale"`
+	// SetHeaderRoute defines the route with specified header name to send 100% of traffic to the canary service
+	// +optional
+	SetHeaderRoute *SetHeaderRoute `json:"setHeaderRoute,omitempty" protobuf:"bytes,6,opt,name=setHeaderRoute"`
+	// SetMirrorRoutes Mirrors traffic that matches rules to a particular destination
+	// +optional
+	SetMirrorRoute *SetMirrorRoute `json:"setMirrorRoute,omitempty" protobuf:"bytes,8,opt,name=setMirrorRoute"`
+}
+
+type SetMirrorRoute struct {
+	// Name this is the name of the route to use for the mirroring of traffic this also needs
+	// to be included in the `spec.strategy.canary.trafficRouting.managedRoutes` field
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	// Match Contains a list of rules that if mated will mirror the traffic to the services
+	// +optional
+	Match []RouteMatch `json:"match,omitempty" protobuf:"bytes,2,opt,name=match"`
+
+	// Services The list of services to mirror the traffic to if the method, path, headers match
+	//Service string `json:"service" protobuf:"bytes,3,opt,name=service"`
+	// Percentage What percent of the traffic that matched the rules should be mirrored
+	Percentage *int32 `json:"percentage,omitempty" protobuf:"varint,4,opt,name=percentage"`
+}
+
+type RouteMatch struct {
+	// Method What http methods should be mirrored
+	// +optional
+	Method *StringMatch `json:"method,omitempty" protobuf:"bytes,1,opt,name=method"`
+	// Path What url paths should be mirrored
+	// +optional
+	Path *StringMatch `json:"path,omitempty" protobuf:"bytes,2,opt,name=path"`
+	// Headers What request with matching headers should be mirrored
+	// +optional
+	Headers map[string]StringMatch `json:"headers,omitempty" protobuf:"bytes,3,opt,name=headers"`
+}
+
+// StringMatch Used to define what type of matching we will use exact, prefix, or regular expression
+type StringMatch struct {
+	// Exact The string must match exactly
+	Exact string `json:"exact,omitempty" protobuf:"bytes,1,opt,name=exact"`
+	// Prefix The string will be prefixed matched
+	Prefix string `json:"prefix,omitempty" protobuf:"bytes,2,opt,name=prefix"`
+	// Regex The string will be regular expression matched
+	Regex string `json:"regex,omitempty" protobuf:"bytes,3,opt,name=regex"`
+}
+
+// SetHeaderRoute defines the route with specified header name to send 100% of traffic to the canary service
+type SetHeaderRoute struct {
+	// Name this is the name of the route to use for the mirroring of traffic this also needs
+	// to be included in the `spec.strategy.canary.trafficRouting.managedRoutes` field
+	Name  string               `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Match []HeaderRoutingMatch `json:"match,omitempty" protobuf:"bytes,2,rep,name=match"`
+}
+
+type HeaderRoutingMatch struct {
+	// HeaderName the name of the request header
+	HeaderName string `json:"headerName" protobuf:"bytes,1,opt,name=headerName"`
+	// HeaderValue the value of the header
+	HeaderValue *StringMatch `json:"headerValue" protobuf:"bytes,2,opt,name=headerValue"`
 }
 
 // SetCanaryScale defines how to scale the newRS without changing traffic weight
@@ -905,8 +1009,13 @@ const (
 	RolloutReplicaFailure RolloutConditionType = "ReplicaFailure"
 	// RolloutPaused means that rollout is in a paused state. It is still progressing at this point.
 	RolloutPaused RolloutConditionType = "Paused"
-	// RolloutCompleted means that rollout is in a completed state. It is still progressing at this point.
+	// RolloutCompleted indicates that the rollout completed its update to the desired revision and is not in the middle
+	// of any update. Note that a Completed rollout could also be considered Progressing or Degraded, if its Pods become
+	// unavailable sometime after the update completes.
 	RolloutCompleted RolloutConditionType = "Completed"
+	// RolloutHealthy means that rollout is in a completed state and is healthy. Which means that all the pods have been updated
+	// and are passing their health checks and are ready to serve traffic.
+	RolloutHealthy RolloutConditionType = "Healthy"
 )
 
 // RolloutCondition describes the state of a rollout at a certain point.
@@ -933,4 +1042,8 @@ type RolloutList struct {
 	metav1.ListMeta `json:"metadata" protobuf:"bytes,1,opt,name=metadata"`
 
 	Items []Rollout `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
+
+type RollbackWindowSpec struct {
+	Revisions int32 `json:"revisions,omitempty" protobuf:"varint,1,opt,name=revisions"`
 }

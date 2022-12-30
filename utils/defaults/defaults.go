@@ -40,6 +40,11 @@ const (
 	DefaultQPS float32 = 40.0
 	// DefaultBurst is the default value for Burst for client side throttling to the K8s API server
 	DefaultBurst int = 80
+	// DefaultAwsLoadBalancerPageSize is the default page size used when calling aws to get load balancers by DNS name
+	DefaultAwsLoadBalancerPageSize = int32(300)
+	// DefaultMetricCleanupDelay is the default time to delay metrics removal upon object removal, gives time for metrics
+	// to be collected
+	DefaultMetricCleanupDelay = int32(65)
 )
 
 const (
@@ -49,6 +54,10 @@ const (
 	DefaultSMITrafficSplitVersion       = "v1alpha1"
 	DefaultTargetGroupBindingAPIVersion = "elbv2.k8s.aws/v1beta1"
 	DefaultAppMeshCRDVersion            = "v1beta2"
+	DefaultTraefikAPIGroup              = "traefik.containo.us"
+	DefaultTraefikVersion               = "traefik.containo.us/v1alpha1"
+	DefaultApisixAPIGroup               = "apisix.apache.org"
+	DefaultApisixVersion                = "apisix.apache.org/v2"
 )
 
 var (
@@ -58,6 +67,7 @@ var (
 	smiAPIVersion                = DefaultSMITrafficSplitVersion
 	targetGroupBindingAPIVersion = DefaultTargetGroupBindingAPIVersion
 	appmeshCRDVersion            = DefaultAppMeshCRDVersion
+	defaultMetricCleanupDelay    = DefaultMetricCleanupDelay
 )
 
 const (
@@ -74,6 +84,14 @@ func init() {
 		if interval, err := strconv.ParseInt(rolloutVerifyInterval, 10, 32); err != nil {
 			rolloutVerifyRetryInterval = time.Duration(interval) * time.Second
 		}
+	}
+}
+
+func GetStringOrDefault(value, defaultValue string) string {
+	if value == "" {
+		return defaultValue
+	} else {
+		return value
 	}
 }
 
@@ -291,4 +309,14 @@ func GetTargetGroupBindingAPIVersion() string {
 
 func GetRolloutVerifyRetryInterval() time.Duration {
 	return rolloutVerifyRetryInterval
+}
+
+// GetMetricCleanupDelaySeconds returns the duration to delay the cleanup of metrics
+func GetMetricCleanupDelaySeconds() time.Duration {
+	return time.Duration(defaultMetricCleanupDelay) * time.Second
+}
+
+// SetMetricCleanupDelaySeconds sets the metric cleanup delay in seconds
+func SetMetricCleanupDelaySeconds(seconds int32) {
+	defaultMetricCleanupDelay = seconds
 }
