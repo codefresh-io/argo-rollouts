@@ -66,12 +66,22 @@ spec:
       canaryService: rollout-apisix-canary-canary
       stableService: rollout-apisix-canary-stable
       trafficRouting:
+        managedRoutes:
+          - name: set-header
         apisix:
           route:
             name: rollouts-apisix-route
             rules:
               - rollouts-apisix
       steps:
+        - setCanaryScale:
+            replicas: 1
+          setHeaderRoute:
+            match:
+              - headerName: trace
+                headerValue:
+                  exact: debug
+            name: set-header
         - setWeight: 20
         - pause: {}
         - setWeight: 40
@@ -161,7 +171,7 @@ Next it is time to perform an update. Just as with Deployments, any change to th
 
 ```shell
 kubectl argo rollouts set image rollout-apisix-canary \
-  rollout-apisix-canary=argoproj/rollouts-demo:yellow
+  rollouts-demo=argoproj/rollouts-demo:yellow
 ```
 
 During a rollout update, the controller will progress through the steps defined in the Rollout's update strategy. The example rollout sets a 20% traffic weight to the canary, and pauses the rollout indefinitely until user action is taken to unpause/promote the rollout.
@@ -182,5 +192,25 @@ Spec:
       Weight:        20
 ......
 ```
-
 The `rollout-apisix-canary-canary` service gets 20% traffic through the Apache APISIX.
+
+You can check SetHeader ApisixRoute's match by the following command
+```bash
+kubectl describe apisixroute set-header
+
+......
+Spec:
+  Http:
+    Backends:
+      Service Name:  rollout-apisix-canary-canary
+      Service Port:  80
+      Weight:        100
+    Match:
+      Exprs:
+        Op:  Equal
+        Subject:
+          Name:   trace
+          Scope:  Header
+        Value:    debug
+......
+```

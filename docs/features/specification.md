@@ -337,6 +337,10 @@ spec:
           templates:
           - name: baseline
             specRef: stable
+            # optional, creates a service for the experiment if set
+            service:
+              # optional, service: {} is also acceptable if name is not included
+              name: test-service
           - name: canary
             specRef: canary
             # optional, set the weight of traffic routed to this version
@@ -383,7 +387,12 @@ spec:
 
         # NGINX Ingress Controller routing configuration
         nginx:
-          stableIngress: primary-ingress  # required
+          # Either stableIngress or stableIngresses must be configured, but not both.
+          stableIngress: primary-ingress
+          stableIngresses:
+            - primary-ingress
+            - secondary-ingress
+            - tertiary-ingress
           annotationPrefix: customingress.nginx.ingress.kubernetes.io # optional
           additionalIngressAnnotations:   # optional
             canary-by-header: X-Canary

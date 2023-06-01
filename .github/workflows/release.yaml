@@ -84,25 +84,25 @@ jobs:
           password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
       - name: Build and push (controller-image)
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4.0.0
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.controller-meta.outputs.tags }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          provenance: false
+          sbom: false
 
       - name: Build and push (plugin-image)
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4.0.0
         with:
           context: .
           target: kubectl-argo-rollouts
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.plugin-meta.outputs.tags }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          provenance: false
+          sbom: false
 
         # Temp fix
         # https://github.com/docker/build-push-action/issues/252
@@ -125,7 +125,7 @@ jobs:
           ref: ${{ github.event.inputs.tag }}
 
       - name: Setup Golang
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: 1.19
 
@@ -164,6 +164,20 @@ jobs:
           fi
 
           cd /tmp && tar -zcf sbom.tar.gz *.spdx
+
+      - name: Login to Quay.io
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
+      - name: update stable tag for docs
+        run: |
+          git tag -f stable ${{ github.event.inputs.tag }}
+          git push -f origin stable
+        if:  ${{ inputs.update_stable_tag }}
 
       - name: Draft release
         uses: softprops/action-gh-release@v1

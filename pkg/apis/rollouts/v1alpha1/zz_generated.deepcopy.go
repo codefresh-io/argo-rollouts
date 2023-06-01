@@ -1668,6 +1668,21 @@ func (in *MetricProvider) DeepCopyInto(out *MetricProvider) {
 		*out = new(SkyWalkingMetric)
 		**out = **in
 	}
+	if in.Plugin != nil {
+		in, out := &in.Plugin, &out.Plugin
+		*out = make(map[string]json.RawMessage, len(*in))
+		for key, val := range *in {
+			var outVal []byte
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = make(json.RawMessage, len(*in))
+				copy(*out, *in)
+			}
+			(*out)[key] = outVal
+		}
+	}
 	return
 }
 
@@ -1736,6 +1751,11 @@ func (in *NginxTrafficRouting) DeepCopyInto(out *NginxTrafficRouting) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.StableIngresses != nil {
+		in, out := &in.StableIngresses, &out.StableIngresses
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	return
 }
@@ -2103,6 +2123,11 @@ func (in *RolloutExperimentTemplate) DeepCopyInto(out *RolloutExperimentTemplate
 		*out = new(int32)
 		**out = **in
 	}
+	if in.Service != nil {
+		in, out := &in.Service, &out.Service
+		*out = new(TemplateService)
+		**out = **in
+	}
 	return
 }
 
@@ -2355,6 +2380,21 @@ func (in *RolloutTrafficRouting) DeepCopyInto(out *RolloutTrafficRouting) {
 		in, out := &in.Apisix, &out.Apisix
 		*out = new(ApisixTrafficRouting)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Plugins != nil {
+		in, out := &in.Plugins, &out.Plugins
+		*out = make(map[string]json.RawMessage, len(*in))
+		for key, val := range *in {
+			var outVal []byte
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = make(json.RawMessage, len(*in))
+				copy(*out, *in)
+			}
+			(*out)[key] = outVal
+		}
 	}
 	return
 }

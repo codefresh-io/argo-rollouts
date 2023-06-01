@@ -58,7 +58,7 @@ type RolloutSpec struct {
 	MinReadySeconds int32 `json:"minReadySeconds,omitempty" protobuf:"varint,4,opt,name=minReadySeconds"`
 	// The window in which a rollback will be fast tracked (fully promoted)
 	// +optional
-	RollbackWindow *RollbackWindowSpec `json:"rollbackWindow,omtempty" protobuf:"bytes,13,opt,name=rollbackWindow"`
+	RollbackWindow *RollbackWindowSpec `json:"rollbackWindow,omitempty" protobuf:"bytes,13,opt,name=rollbackWindow"`
 	// The deployment strategy to use to replace existing pods with new ones.
 	// +optional
 	Strategy RolloutStrategy `json:"strategy" protobuf:"bytes,5,opt,name=strategy"`
@@ -369,11 +369,16 @@ type RolloutTrafficRouting struct {
 	AppMesh *AppMeshTrafficRouting `json:"appMesh,omitempty" protobuf:"bytes,6,opt,name=appMesh"`
 	// Traefik holds specific configuration to use Traefik to route traffic
 	Traefik *TraefikTrafficRouting `json:"traefik,omitempty" protobuf:"bytes,7,opt,name=traefik"`
-	// A list of HTTP routes that Argo Rollouts manages, the order of this array also becomes the precedence in the upstream
+	// ManagedRoutes A list of HTTP routes that Argo Rollouts manages, the order of this array also becomes the precedence in the upstream
 	// traffic router.
 	ManagedRoutes []MangedRoutes `json:"managedRoutes,omitempty" protobuf:"bytes,8,rep,name=managedRoutes"`
 	// Apisix holds specific configuration to use Apisix to route traffic
 	Apisix *ApisixTrafficRouting `json:"apisix,omitempty" protobuf:"bytes,9,opt,name=apisix"`
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Type=object
+	// Plugins holds specific configuration that traffic router plugins can use for routing traffic
+	Plugins map[string]json.RawMessage `json:"plugins,omitempty" protobuf:"bytes,10,opt,name=plugins"`
 }
 
 type MangedRoutes struct {
@@ -426,9 +431,12 @@ type NginxTrafficRouting struct {
 	// +optional
 	AnnotationPrefix string `json:"annotationPrefix,omitempty" protobuf:"bytes,1,opt,name=annotationPrefix"`
 	// StableIngress refers to the name of an `Ingress` resource in the same namespace as the `Rollout`
-	StableIngress string `json:"stableIngress" protobuf:"bytes,2,opt,name=stableIngress"`
+	StableIngress string `json:"stableIngress,omitempty" protobuf:"bytes,2,opt,name=stableIngress"`
 	// +optional
 	AdditionalIngressAnnotations map[string]string `json:"additionalIngressAnnotations,omitempty" protobuf:"bytes,3,rep,name=additionalIngressAnnotations"`
+	// StableIngresses refers to the names of `Ingress` resources in the same namespace as the `Rollout` in a multi ingress scenario
+	// +optional
+	StableIngresses []string `json:"stableIngresses,omitempty" protobuf:"bytes,4,rep,name=stableIngresses"`
 }
 
 // IstioTrafficRouting configuration for Istio service mesh to enable fine grain configuration
@@ -556,6 +564,8 @@ type RolloutExperimentTemplate struct {
 	Selector *metav1.LabelSelector `json:"selector,omitempty" protobuf:"bytes,5,opt,name=selector"`
 	// Weight sets the percentage of traffic the template's replicas should receive
 	Weight *int32 `json:"weight,omitempty" protobuf:"varint,6,opt,name=weight"`
+	// Service controls the optionally generated service
+	Service *TemplateService `json:"service,omitempty" protobuf:"bytes,7,opt,name=service"`
 }
 
 // PodTemplateMetadata extra labels to add to the template
@@ -986,6 +996,9 @@ type ALBStatus struct {
 type AwsResourceRef struct {
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	ARN  string `json:"arn" protobuf:"bytes,2,opt,name=arn"`
+	// FullName is the full name of the resource
+	// +optional
+	FullName string `json:"fullName" protobuf:"bytes,3,opt,name=fullName"`
 }
 
 // RolloutConditionType defines the conditions of Rollout
