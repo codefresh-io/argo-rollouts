@@ -10,8 +10,14 @@ on:
   pull_request:
 
 jobs:
-  docker:
+  set-vars:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
+    outputs:
+      controller-meta-tags: ${{ steps.controller-meta.outputs.tags }}
+      plugin-meta-tags: ${{ steps.plugin-meta.outputs.tags }}
+      platforms: ${{ steps.platform-matrix.outputs.platform-matrix }}
 
     steps:
       - name: Checkout
@@ -81,7 +87,7 @@ jobs:
           if [ ${{ github.event_name != 'pull_request' }} = true ]; then
             PLATFORM_MATRIX=$PLATFORM_MATRIX,linux/arm64
           fi
-          echo "::set-output name=platform-matrix::$PLATFORM_MATRIX"
+          echo "platform-matrix=$PLATFORM_MATRIX" >> $GITHUB_OUTPUT
 
       - name: Build and push (controller-image)
         uses: docker/build-push-action@v3

@@ -175,6 +175,11 @@ type MetricProvider struct {
 	Influxdb *InfluxdbMetric `json:"influxdb,omitempty" protobuf:"bytes,10,opt,name=influxdb"`
 	// SkyWalking specifies the skywalking metric to query
 	SkyWalking *SkyWalkingMetric `json:"skywalking,omitempty" protobuf:"bytes,11,opt,name=skywalking"`
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Type=object
+	// Plugin specifies the hashicorp go-plugin metric to query
+	Plugin map[string]json.RawMessage `json:"plugin,omitempty" protobuf:"bytes,12,opt,name=plugin"`
 }
 
 // AnalysisPhase is the overall phase of an AnalysisRun, MetricResult, or Measurement
@@ -519,4 +524,6 @@ type WebMetricHeader struct {
 type DatadogMetric struct {
 	Interval DurationString `json:"interval,omitempty" protobuf:"bytes,1,opt,name=interval,casttype=DurationString"`
 	Query    string         `json:"query" protobuf:"bytes,2,opt,name=query"`
+	// ApiVersion refers to the Datadog API version being used (default: v1). v1 will eventually be deprecated.
+	ApiVersion string `json:"apiVersion,omitempty" protobuf:"bytes,3,opt,name=apiVersion"`
 }
