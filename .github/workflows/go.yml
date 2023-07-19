@@ -2,10 +2,12 @@ name: Go
 on:
   push:
     branches:
-      - "master"
-      - "release-*"
+      # - "master"
+      - "release-*" # Codefresh convention
   pull_request:
     branches:
+      # - "master"
+      - "release-*" # Codefresh convention
       - "master"
 env:
   # Golang version to use across CI steps
@@ -29,9 +31,6 @@ jobs:
           name: Event File
           path: ${{ github.event_path }}
   lint-go:
-    permissions:
-      contents: read  # for actions/checkout to fetch code
-      pull-requests: read  # for golangci/golangci-lint-action to fetch pull requests
     name: Lint Go code
     runs-on: ubuntu-latest
     steps:

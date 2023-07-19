@@ -56,6 +56,8 @@ require (
 
 )
 
+require github.com/matryer/is v1.4.0 // indirect
+
 require (
 	cloud.google.com/go/compute v1.15.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -70,7 +72,6 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1 // indirect
 	github.com/google/go-github/v41 v41.0.0 // indirect
 	github.com/google/go-github/v45 v45.2.0 // indirect
-	github.com/matryer/is v1.4.0 // indirect
 	github.com/russross/blackfriday v1.6.0 // indirect
 )
 
