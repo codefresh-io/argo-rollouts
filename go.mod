@@ -3,7 +3,7 @@ module github.com/argoproj/argo-rollouts
 go 1.19
 
 require (
-	github.com/antonmedv/expr v1.12.5
+	github.com/antonmedv/expr v1.15.4
 	github.com/argoproj/notifications-engine v0.4.0
 	github.com/argoproj/pkg v0.13.6
 	github.com/aws/aws-sdk-go-v2 v1.18.0
@@ -33,7 +33,7 @@ require (
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spaceapegames/go-wavefront v1.8.1
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/tj/assert v0.0.3
 	github.com/valyala/fasttemplate v1.2.2
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f
