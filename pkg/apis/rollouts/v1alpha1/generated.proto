@@ -37,6 +37,8 @@ message ALBStatus {
   optional AwsResourceRef canaryTargetGroup = 2;
 
   optional AwsResourceRef stableTargetGroup = 3;
+
+  optional string ingress = 4;
 }
 
 // ALBTrafficRouting configuration for ALB ingress controller to control traffic routing
@@ -50,13 +52,17 @@ message ALBTrafficRouting {
   // RootService references the service in the ingress to the controller should add the action to
   optional string rootService = 3;
 
-  // AdditionalForwardConfig allows to specify further settings on the ForwaredConfig
-  // +optional
-  optional StickinessConfig stickinessConfig = 5;
-
   // AnnotationPrefix has to match the configured annotation prefix on the alb ingress controller
   // +optional
   optional string annotationPrefix = 4;
+
+  // StickinessConfig refers to the duration-based stickiness of the target groups associated with an `Ingress`
+  // +optional
+  optional StickinessConfig stickinessConfig = 5;
+
+  // Ingresses refers to the name of an `Ingress` resource in the same namespace as the `Rollout` in a multi ingress scenario
+  // +optional
+  repeated string ingresses = 6;
 }
 
 // AmbassadorTrafficRouting defines the configuration required to use Ambassador as traffic
@@ -99,6 +105,17 @@ message AnalysisRunList {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta metadata = 1;
 
   repeated AnalysisRun items = 2;
+}
+
+// AnalysisRunMetadata extra labels to add to the AnalysisRun
+message AnalysisRunMetadata {
+  // Labels Additional labels to add to the AnalysisRun
+  // +optional
+  map<string, string> labels = 1;
+
+  // Annotations additional annotations to add to the AnalysisRun
+  // +optional
+  map<string, string> annotations = 2;
 }
 
 // AnalysisRunSpec is the spec for a AnalysisRun resource
@@ -1110,12 +1127,35 @@ message PreferredDuringSchedulingIgnoredDuringExecution {
 }
 
 // PrometheusMetric defines the prometheus query to perform canary analysis
+message PrometheusAuth {
+  // +optional
+  optional Sigv4Config sigv4 = 3;
+}
+
+// PrometheusMetric defines the prometheus query to perform canary analysis
 message PrometheusMetric {
   // Address is the HTTP address and port of the prometheus server
   optional string address = 1;
 
   // Query is a raw prometheus query to perform
   optional string query = 2;
+
+  // Sigv4 Config is the aws SigV4 configuration to use for SigV4 signing if using Amazon Managed Prometheus
+  // +optional
+  optional PrometheusAuth authentication = 3;
+
+  // Timeout represents the duration within which a prometheus query should complete. It is expressed in seconds.
+  // +optional
+  optional int64 timeout = 4;
+
+  // Insecure skips host TLS verification
+  optional bool insecure = 5;
+
+  // Headers are optional HTTP headers to use in the request
+  // +optional
+  // +patchMergeKey=key
+  // +patchStrategy=merge
+  repeated WebMetricHeader headers = 6;
 }
 
 // RequiredDuringSchedulingIgnoredDuringExecution defines inter-pod scheduling rule to be RequiredDuringSchedulingIgnoredDuringExecution
@@ -1138,6 +1178,8 @@ message Rollout {
 // RolloutAnalysis defines a template that is used to create a analysisRun
 message RolloutAnalysis {
   // Templates reference to a list of analysis templates to combine for an AnalysisRun
+  // +patchMergeKey=templateName
+  // +patchStrategy=merge
   repeated RolloutAnalysisTemplate templates = 1;
 
   // Args the arguments that will be added to the AnalysisRuns
@@ -1156,6 +1198,10 @@ message RolloutAnalysis {
   // +patchStrategy=merge
   // +optional
   repeated MeasurementRetention measurementRetention = 4;
+
+  // AnalysisRunMetadata labels and annotations that will be added to the AnalysisRuns
+  // +optional
+  optional AnalysisRunMetadata analysisRunMetadata = 5;
 }
 
 // RolloutAnalysisBackground defines a template that is used to create a background analysisRun
@@ -1453,6 +1499,9 @@ message RolloutStatus {
 
   // / ALB keeps information regarding the ALB and TargetGroups
   optional ALBStatus alb = 25;
+
+  // / ALBs keeps information regarding multiple ALBs and TargetGroups in a multi ingress scenario
+  repeated ALBStatus albs = 26;
 }
 
 // RolloutStrategy defines strategy to apply during next rollout
@@ -1601,6 +1650,17 @@ message SetMirrorRoute {
   // Service string `json:"service" protobuf:"bytes,3,opt,name=service"`
   // Percentage What percent of the traffic that matched the rules should be mirrored
   optional int32 percentage = 4;
+}
+
+message Sigv4Config {
+  // Region is the AWS Region to sign the SigV4 Request
+  optional string address = 1;
+
+  // Profile is the Credential Profile used to sign the SigV4 Request
+  optional string profile = 2;
+
+  // RoleARN is the IAM role used to sign the SIgV4 Request
+  optional string roleArn = 3;
 }
 
 message SkyWalkingMetric {

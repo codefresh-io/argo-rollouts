@@ -3,7 +3,7 @@ name: Docker
 on:
   push:
     branches:
-      # - master  # commented due to Codefresh convention
+      - master
       - release-*
 
   # Run tests for any PRs.
@@ -31,49 +31,28 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            quay.io/codefresh/argo-rollouts
-          # ghcr.io/codefresh-io/argo-rollouts
+            quay.io/argoproj/argo-rollouts
           tags: |
-            type=ref,event=branch
-          # commented due to  Codefresh convention
-          # flavor: |
-          #   latest=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master'}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
 
       - name: Docker meta (plugin)
         id: plugin-meta
         uses: docker/metadata-action@v4
         with:
           images: |
-            quay.io/codefresh/kubectl-argo-rollouts
-          # ghcr.io/codefresh-io/kubectl-argo-rollouts
+            quay.io/argoproj/kubectl-argo-rollouts
           tags: |
-            type=ref,event=branch
-          # commented due to  Codefresh convention
-          # flavor: |
-          #   latest=${{ github.ref == 'refs/heads/master' }}
-
-      # - name: Login to GitHub Container Registry
-      #   if: github.event_name != 'pull_request'
-      #   uses: docker/login-action@v1 
-      #   with:
-      #     registry: ghcr.io
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Quay.io
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master'}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
 
       # avoid building linux/arm64 for PRs since it takes so long
       - name: Set Platform Matrix
         id: platform-matrix
         run: |
           PLATFORM_MATRIX=linux/amd64
-          if [ ${{ github.event_name != 'pull_request' }} = true ]; then
+          if [[ "${{ github.event_name }}" == "push" || "${{ contains(github.event.pull_request.labels.*.name, 'test-arm-image') }}" == "true" ]]
+          then
             PLATFORM_MATRIX=$PLATFORM_MATRIX,linux/arm64
           fi
           echo "platform-matrix=$PLATFORM_MATRIX" >> $GITHUB_OUTPUT
@@ -88,7 +67,7 @@ jobs:
     with:
       quay_image_name: ${{ needs.set-vars.outputs.controller-meta-tags }}
       # Note: cannot use env variables to set go-version (https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations)
-      go-version: 1.19
+      go-version: '1.20'
       platforms: ${{ needs.set-vars.outputs.platforms }}
       push: ${{ github.event_name != 'pull_request' }}
     secrets:
@@ -105,7 +84,7 @@ jobs:
     with:
       quay_image_name: ${{ needs.set-vars.outputs.plugin-meta-tags }}
       # Note: cannot use env variables to set go-version (https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations)
-      go-version: 1.19
+      go-version: '1.20'
       platforms: ${{ needs.set-vars.outputs.platforms }}
       push: ${{ github.event_name != 'pull_request' }}
       target: kubectl-argo-rollouts

@@ -14,7 +14,6 @@ import (
 
 	a6util "github.com/argoproj/argo-rollouts/utils/apisix"
 
-	"github.com/ghodss/yaml"
 	smiv1alpha1 "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha1"
 	smiclientset "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/split/clientset/versioned"
 	"github.com/sirupsen/logrus"
@@ -31,6 +30,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	rov1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
@@ -71,11 +71,19 @@ func (c *Common) CheckError(err error) {
 	}
 }
 
+// Rollout returns the original rollout manifest used in the test
 func (c *Common) Rollout() *rov1.Rollout {
 	var ro rov1.Rollout
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(c.rollout.Object, &ro)
 	c.CheckError(err)
 	return &ro
+}
+
+// GetRollout returns the live rollout object in the cluster
+func (c *Common) GetRollout() *rov1.Rollout {
+	ro, err := c.rolloutClient.ArgoprojV1alpha1().Rollouts(c.namespace).Get(context.TODO(), c.Rollout().GetName(), metav1.GetOptions{})
+	c.CheckError(err)
+	return ro
 }
 
 func (c *Common) PrintRollout(name string) {
@@ -534,6 +542,18 @@ func (c *Common) GetALBIngress() *networkingv1.Ingress {
 	ingress, err := c.kubeClient.NetworkingV1().Ingresses(c.namespace).Get(c.Context, name, metav1.GetOptions{})
 	c.CheckError(err)
 	return ingress
+}
+
+func (c *Common) GetALBIngresses() []*networkingv1.Ingress {
+	ro := c.Rollout()
+	names := ro.Spec.Strategy.Canary.TrafficRouting.ALB.Ingresses
+	ingresses := []*networkingv1.Ingress{}
+	for _, name := range names {
+		ingress, err := c.kubeClient.NetworkingV1().Ingresses(c.namespace).Get(c.Context, name, metav1.GetOptions{})
+		c.CheckError(err)
+		ingresses = append(ingresses, ingress)
+	}
+	return ingresses
 }
 
 func (c *Common) GetNginxIngressStable() *networkingv1.Ingress {

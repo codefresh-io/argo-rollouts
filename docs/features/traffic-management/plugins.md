@@ -1,11 +1,12 @@
 # Traffic Router Plugins
 
-!!! important Available since v1.5 - Status: Alpha
+!!! important
+    Available since v1.5 - Status: Alpha
 
 Argo Rollouts supports getting analysis metrics via 3rd party plugin system. This allows users to extend the capabilities of Rollouts
 to support metric providers that are not natively supported. Rollout's uses a plugin library called
 [go-plugin](https://github.com/hashicorp/go-plugin) to do this. You can find a sample plugin
-here: [rollouts-sample_nginx-trafficrouter-plugin](https://github.com/argoproj-labs/rollouts-sample_nginx-trafficrouter-plugin)
+here: [rollouts-plugin-trafficrouter-sample-nginx](https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-sample-nginx)
 
 ## Using a Traffic Router Plugin
 
@@ -47,7 +48,7 @@ metadata:
 data:
   trafficRouterPlugins: |-
     - name: "argoproj-labs/sample-nginx" # name of the plugin, it must match the name required by the plugin so it can find it's configuration
-      location: "https://github.com/argoproj-labs/rollouts-sample_nginx-trafficrouter-plugin/releases/download/v0.0.1/metric-plugin-linux-amd64" # supports http(s):// urls and file://
+      location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-sample-nginx/releases/download/v0.0.1/metric-plugin-linux-amd64" # supports http(s):// urls and file://
       sha256: "08f588b1c799a37bbe8d0fc74cc1b1492dd70b2c" #optional sha256 checksum of the plugin executable
 ```
 
@@ -68,6 +69,12 @@ responsibility of the Argo Rollouts administrator to define the plugin installat
 
 #### Add Your Plugin Here
 * If you have created a plugin, please submit a PR to add it to this list.
-#### [rollouts-sample_nginx-trafficrouter-plugin](https://github.com/argoproj-labs/rollouts-sample_nginx-trafficrouter-plugin)
+#### [rollouts-plugin-trafficrouter-sample-nginx](https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-sample-nginx)
 * This is just a sample plugin that can be used as a starting point for creating your own plugin.
   It is not meant to be used in production. It is based on the built-in prometheus provider.
+
+#### [Contour](https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-contour)
+* This is a plugin for support Contour.
+
+#### [Gateway API](https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/)
+* Provide support for Gateway API, which includes Kuma, Traefix, cilium, Contour, GloodMesh, HAProxy, and [many others](https://gateway-api.sigs.k8s.io/implementations/#implementation-status). 

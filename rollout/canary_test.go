@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -182,7 +183,7 @@ func TestCanaryRolloutEnterPauseState(t *testing.T) {
 	now := timeutil.MetaNow().UTC().Format(time.RFC3339)
 	expectedPatchWithoutObservedGen := fmt.Sprintf(expectedPatchTemplate, v1alpha1.PauseReasonCanaryPauseStep, now, conditions, v1alpha1.PauseReasonCanaryPauseStep)
 	expectedPatch := calculatePatch(r2, expectedPatchWithoutObservedGen)
-	assert.Equal(t, expectedPatch, patch)
+	assert.JSONEq(t, expectedPatch, patch)
 }
 
 func TestCanaryRolloutNoProgressWhilePaused(t *testing.T) {
@@ -257,7 +258,7 @@ func TestCanaryRolloutUpdatePauseConditionWhilePaused(t *testing.T) {
 	f.run(getKey(r2, t))
 
 	patch := f.getPatchedRollout(addPausedConditionPatch)
-	assert.Equal(t, calculatePatch(r2, OnlyObservedGenerationPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, OnlyObservedGenerationPatch), patch)
 }
 
 func TestCanaryRolloutResetProgressDeadlineOnRetry(t *testing.T) {
@@ -300,7 +301,7 @@ func TestCanaryRolloutResetProgressDeadlineOnRetry(t *testing.T) {
 			"message": "more replicas need to be updated"
 		}
 	}`, retryCondition)
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestCanaryRolloutIncrementStepAfterUnPaused(t *testing.T) {
@@ -342,7 +343,7 @@ func TestCanaryRolloutIncrementStepAfterUnPaused(t *testing.T) {
 }`
 	generatedConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, rs2, false, "", false)
 	expectedPatch := calculatePatch(r2, fmt.Sprintf(expectedPatchTemplate, generatedConditions))
-	assert.Equal(t, expectedPatch, patch)
+	assert.JSONEq(t, expectedPatch, patch)
 }
 
 func TestCanaryRolloutUpdateStatusWhenAtEndOfSteps(t *testing.T) {
@@ -383,7 +384,7 @@ func TestCanaryRolloutUpdateStatusWhenAtEndOfSteps(t *testing.T) {
 	}`
 
 	expectedPatch := fmt.Sprintf(expectedPatchWithoutStableRS, expectedStableRS, generateConditionsPatchWithCompleted(true, conditions.ReplicaSetUpdatedReason, rs2, false, "", true))
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestResetCurrentStepIndexOnStepChange(t *testing.T) {
@@ -426,8 +427,7 @@ func TestResetCurrentStepIndexOnStepChange(t *testing.T) {
 	}`
 	newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, r2, false, "", false)
 	expectedPatch := fmt.Sprintf(expectedPatchWithoutPodHash, expectedCurrentPodHash, expectedCurrentStepHash, newConditions)
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
-
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestResetCurrentStepIndexOnPodSpecChange(t *testing.T) {
@@ -468,8 +468,7 @@ func TestResetCurrentStepIndexOnPodSpecChange(t *testing.T) {
 	newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, r2, false, "", false)
 
 	expectedPatch := fmt.Sprintf(expectedPatchWithoutPodHash, expectedCurrentPodHash, newConditions)
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
-
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestCanaryRolloutCreateFirstReplicasetNoSteps(t *testing.T) {
@@ -507,7 +506,7 @@ func TestCanaryRolloutCreateFirstReplicasetNoSteps(t *testing.T) {
 
 	newConditions := generateConditionsPatchWithCompleted(false, conditions.ReplicaSetUpdatedReason, rs, false, "", true)
 
-	assert.Equal(t, calculatePatch(r, fmt.Sprintf(expectedPatch, newConditions)), patch)
+	assert.JSONEq(t, calculatePatch(r, fmt.Sprintf(expectedPatch, newConditions)), patch)
 }
 
 func TestCanaryRolloutCreateFirstReplicasetWithSteps(t *testing.T) {
@@ -547,7 +546,7 @@ func TestCanaryRolloutCreateFirstReplicasetWithSteps(t *testing.T) {
 	}`
 	expectedPatch := fmt.Sprintf(expectedPatchWithSub, generateConditionsPatchWithCompleted(false, conditions.ReplicaSetUpdatedReason, rs, false, "", true))
 
-	assert.Equal(t, calculatePatch(r, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r, expectedPatch), patch)
 }
 
 func TestCanaryRolloutCreateNewReplicaWithCorrectWeight(t *testing.T) {
@@ -708,7 +707,6 @@ func TestCanaryRolloutScaleDownOldRsDontScaleDownTooMuch(t *testing.T) {
 	assert.Equal(t, int32(0), *updatedRS1.Spec.Replicas)
 	updatedRS2 := f.getUpdatedReplicaSet(updatedRS2Index)
 	assert.Equal(t, int32(4), *updatedRS2.Spec.Replicas)
-
 }
 
 // TestCanaryDontScaleDownOldRsDuringInterruptedUpdate tests when we need to prevent scale down an
@@ -846,7 +844,56 @@ func TestRollBackToStable(t *testing.T) {
 	newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, rs1, false, "", true)
 	expectedPatch := fmt.Sprintf(expectedPatchWithoutSub, hash.ComputePodTemplateHash(&r2.Spec.Template, r2.Status.CollisionCount), newConditions)
 	patch := f.getPatchedRollout(patchIndex)
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
+}
+
+func TestRollBackToActiveReplicaSetWithinWindow(t *testing.T) {
+	f := newFixture(t)
+	defer f.Close()
+
+	steps := []v1alpha1.CanaryStep{{
+		SetWeight: int32Ptr(10),
+	}}
+
+	r1 := newCanaryRollout("foo", 1, nil, steps, int32Ptr(0), intstr.FromInt(1), intstr.FromInt(0))
+	r2 := bumpVersion(r1)
+
+	// For the fast rollback to work, we need to:
+	// 1. Have the previous revision be active (i.e. not scaled down)
+	// 2. Be in rollback window (within window revisions and previous creation timestamp)
+	rs1 := newReplicaSetWithStatus(r1, 1, 1)
+	rs2 := newReplicaSetWithStatus(r2, 1, 1)
+	r2.Spec.RollbackWindow = &v1alpha1.RollbackWindowSpec{Revisions: 1}
+	rs1.CreationTimestamp = timeutil.MetaTime(time.Now().Add(-1 * time.Hour))
+	rs2.CreationTimestamp = timeutil.MetaNow()
+
+	f.kubeobjects = append(f.kubeobjects, rs1, rs2)
+	f.replicaSetLister = append(f.replicaSetLister, rs1, rs2)
+	f.serviceLister = append(f.serviceLister)
+
+	// Switch back to version 1
+	r2.Spec.Template = r1.Spec.Template
+
+	rs1PodHash := rs1.Labels[v1alpha1.DefaultRolloutUniqueLabelKey]
+	rs2PodHash := rs2.Labels[v1alpha1.DefaultRolloutUniqueLabelKey]
+
+	// Since old replicaset is still active, expect twice the number of replicas
+	r2 = updateCanaryRolloutStatus(r2, rs2PodHash, 2, 2, 2, false)
+
+	f.rolloutLister = append(f.rolloutLister, r2)
+	f.objects = append(f.objects, r2)
+
+	f.expectUpdateReplicaSetAction(rs1)
+	f.expectUpdateReplicaSetAction(rs1)
+	rolloutPatchIndex := f.expectPatchRolloutAction(r2)
+	f.run(getKey(r2, t))
+
+	expectedStepIndex := len(steps)
+	patch := f.getPatchedRolloutWithoutConditions(rolloutPatchIndex)
+
+	// Assert current pod hash is the old replicaset and steps were skipped
+	assert.Regexp(t, fmt.Sprintf(`"currentPodHash":"%s"`, rs1PodHash), patch)
+	assert.Regexp(t, fmt.Sprintf(`"currentStepIndex":%d`, expectedStepIndex), patch)
 }
 
 func TestGradualShiftToNewStable(t *testing.T) {
@@ -889,7 +936,7 @@ func TestGradualShiftToNewStable(t *testing.T) {
 	newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, r2, false, "", false)
 	expectedPatch := fmt.Sprintf(expectedPatchWithoutSub, newConditions)
 	patch := f.getPatchedRollout(patchIndex)
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestRollBackToStableAndStepChange(t *testing.T) {
@@ -937,7 +984,7 @@ func TestRollBackToStableAndStepChange(t *testing.T) {
 	newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, rs1, false, "", true)
 	expectedPatch := fmt.Sprintf(expectedPatchWithoutSub, newPodHash, newStepHash, newConditions)
 	patch := f.getPatchedRollout(patchIndex)
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestCanaryRolloutIncrementStepIfSetWeightsAreCorrect(t *testing.T) {
@@ -973,7 +1020,7 @@ func TestCanaryRolloutIncrementStepIfSetWeightsAreCorrect(t *testing.T) {
 		}
 	}`
 	newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, rs3, false, "", false)
-	assert.Equal(t, calculatePatch(r3, fmt.Sprintf(expectedPatch, newConditions)), patch)
+	assert.JSONEq(t, calculatePatch(r3, fmt.Sprintf(expectedPatch, newConditions)), patch)
 }
 
 func TestSyncRolloutWaitAddToQueue(t *testing.T) {
@@ -1019,9 +1066,8 @@ func TestSyncRolloutWaitAddToQueue(t *testing.T) {
 	c, i, k8sI := f.newController(func() time.Duration { return 30 * time.Minute })
 	f.runController(key, true, false, c, i, k8sI)
 
-	//When the controller starts, it will enqueue the rollout while syncing the informer and during the reconciliation step
+	// When the controller starts, it will enqueue the rollout while syncing the informer and during the reconciliation step
 	assert.Equal(t, 2, f.enqueuedObjects[key])
-
 }
 
 func TestSyncRolloutIgnoreWaitOutsideOfReconciliationPeriod(t *testing.T) {
@@ -1034,7 +1080,7 @@ func TestSyncRolloutIgnoreWaitOutsideOfReconciliationPeriod(t *testing.T) {
 		},
 		{
 			Pause: &v1alpha1.RolloutPause{
-				Duration: v1alpha1.DurationFromInt(3600), //1 hour
+				Duration: v1alpha1.DurationFromInt(3600), // 1 hour
 			},
 		},
 	}
@@ -1068,9 +1114,8 @@ func TestSyncRolloutIgnoreWaitOutsideOfReconciliationPeriod(t *testing.T) {
 	key := fmt.Sprintf("%s/%s", r2.Namespace, r2.Name)
 	c, i, k8sI := f.newController(func() time.Duration { return 30 * time.Minute })
 	f.runController(key, true, false, c, i, k8sI)
-	//When the controller starts, it will enqueue the rollout so we expect the rollout to enqueue at least once.
+	// When the controller starts, it will enqueue the rollout so we expect the rollout to enqueue at least once.
 	assert.Equal(t, 1, f.enqueuedObjects[key])
-
 }
 
 func TestSyncRolloutWaitIncrementStepIndex(t *testing.T) {
@@ -1084,7 +1129,8 @@ func TestSyncRolloutWaitIncrementStepIndex(t *testing.T) {
 			Pause: &v1alpha1.RolloutPause{
 				Duration: v1alpha1.DurationFromInt(5),
 			},
-		}, {
+		},
+		{
 			Pause: &v1alpha1.RolloutPause{},
 		},
 	}
@@ -1126,7 +1172,7 @@ func TestSyncRolloutWaitIncrementStepIndex(t *testing.T) {
 			"currentStepIndex":2
 		}
 	}`
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestCanaryRolloutStatusHPAStatusFields(t *testing.T) {
@@ -1170,7 +1216,7 @@ func TestCanaryRolloutStatusHPAStatusFields(t *testing.T) {
 	f.run(getKey(r2, t))
 
 	patch := f.getPatchedRolloutWithoutConditions(index)
-	assert.Equal(t, calculatePatch(r2, expectedPatchWithSub), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatchWithSub), patch)
 }
 
 func TestCanaryRolloutWithCanaryService(t *testing.T) {
@@ -1236,6 +1282,7 @@ func TestCanarySVCSelectors(t *testing.T) {
 				},
 			},
 		}
+
 		rc := rolloutContext{
 			log: logutil.WithRollout(rollout),
 			reconcilerBase: reconcilerBase{
@@ -1266,6 +1313,7 @@ func TestCanarySVCSelectors(t *testing.T) {
 				},
 			},
 		}
+
 		stopchan := make(chan struct{})
 		defer close(stopchan)
 		informers.Start(stopchan)
@@ -1281,6 +1329,124 @@ func TestCanarySVCSelectors(t *testing.T) {
 		} else {
 			assert.Empty(t, updatedCanarySVC.Spec.Selector[v1alpha1.DefaultRolloutUniqueLabelKey],
 				"canary SVC should not have newRS selector label when newRS has %d replicas and %d AvailableReplicas",
+				tc.canaryReplicas, tc.canaryAvailReplicas)
+		}
+	}
+}
+
+func TestCanarySVCSelectorsBasicCanaryAbortServiceSwitchBack(t *testing.T) {
+	for _, tc := range []struct {
+		canaryReplicas      int32
+		canaryAvailReplicas int32
+		shouldAbortRollout  bool
+		shouldTargetNewRS   bool
+	}{
+		{2, 2, false, true}, // Rollout, canaryService should point at the canary RS
+		{2, 2, true, false}, // Rollout aborted, canaryService should point at the stable RS
+	} {
+		namespace := "namespace"
+		selectorLabel := "selector-labels-test"
+		selectorNewRSVal := "new-rs-xxx"
+		selectorStableRSVal := "stable-rs-xxx"
+		stableService := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "stable",
+				Namespace:   namespace,
+				Annotations: map[string]string{v1alpha1.ManagedByRolloutsKey: selectorLabel},
+				Labels: map[string]string{
+					v1alpha1.DefaultRolloutUniqueLabelKey: selectorStableRSVal,
+				},
+			},
+		}
+		canaryService := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "canary",
+				Namespace:   namespace,
+				Annotations: map[string]string{v1alpha1.ManagedByRolloutsKey: selectorLabel},
+			},
+		}
+		kubeclient := k8sfake.NewSimpleClientset(stableService, canaryService)
+		informers := k8sinformers.NewSharedInformerFactory(kubeclient, 0)
+		servicesLister := informers.Core().V1().Services().Lister()
+
+		rollout := &v1alpha1.Rollout{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      selectorLabel,
+				Namespace: namespace,
+			},
+			Spec: v1alpha1.RolloutSpec{
+				Strategy: v1alpha1.RolloutStrategy{
+					Canary: &v1alpha1.CanaryStrategy{
+						StableService: stableService.Name,
+						CanaryService: canaryService.Name,
+					},
+				},
+			},
+		}
+
+		pc := pauseContext{
+			rollout: rollout,
+		}
+		if tc.shouldAbortRollout {
+			pc.AddAbort("Add Abort")
+		}
+
+		rc := rolloutContext{
+			log:          logutil.WithRollout(rollout),
+			pauseContext: &pc,
+			reconcilerBase: reconcilerBase{
+				servicesLister: servicesLister,
+				kubeclientset:  kubeclient,
+				recorder:       record.NewFakeEventRecorder(),
+			},
+			rollout: rollout,
+			newRS: &v1.ReplicaSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "canary",
+					Namespace: namespace,
+					Labels: map[string]string{
+						v1alpha1.DefaultRolloutUniqueLabelKey: selectorNewRSVal,
+					},
+				},
+				Spec: v1.ReplicaSetSpec{
+					Replicas: pointer.Int32Ptr(tc.canaryReplicas),
+				},
+				Status: v1.ReplicaSetStatus{
+					AvailableReplicas: tc.canaryAvailReplicas,
+				},
+			},
+			stableRS: &v1.ReplicaSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "stable",
+					Namespace: namespace,
+					Labels: map[string]string{
+						v1alpha1.DefaultRolloutUniqueLabelKey: selectorStableRSVal,
+					},
+				},
+				Spec: v1.ReplicaSetSpec{
+					Replicas: pointer.Int32Ptr(tc.canaryReplicas),
+				},
+				Status: v1.ReplicaSetStatus{
+					AvailableReplicas: tc.canaryAvailReplicas,
+				},
+			},
+		}
+
+		stopchan := make(chan struct{})
+		defer close(stopchan)
+		informers.Start(stopchan)
+		informers.WaitForCacheSync(stopchan)
+		err := rc.reconcileStableAndCanaryService()
+		assert.NoError(t, err, "unable to reconcileStableAndCanaryService")
+		updatedCanarySVC, err := servicesLister.Services(rc.rollout.Namespace).Get(canaryService.Name)
+		assert.NoError(t, err, "unable to get updated canary service")
+		if tc.shouldTargetNewRS {
+			assert.Equal(t, selectorNewRSVal, updatedCanarySVC.Spec.Selector[v1alpha1.DefaultRolloutUniqueLabelKey],
+				"canary SVC should have newRS selector label when newRS has %d replicas and %d AvailableReplicas",
+				tc.canaryReplicas, tc.canaryAvailReplicas)
+		} else {
+			assert.Equal(t, selectorStableRSVal, updatedCanarySVC.Spec.Selector[v1alpha1.DefaultRolloutUniqueLabelKey],
+				"canary SVC should have stableRS selector label when newRS has %d replicas and %d AvailableReplicas",
 				tc.canaryReplicas, tc.canaryAvailReplicas)
 		}
 	}
@@ -1491,7 +1657,7 @@ func TestCanaryRolloutScaleWhilePaused(t *testing.T) {
 
 	patch := f.getPatchedRolloutWithoutConditions(patchIndex)
 	expectedPatch := calculatePatch(r2, OnlyObservedGenerationPatch)
-	assert.Equal(t, expectedPatch, patch)
+	assert.JSONEq(t, expectedPatch, patch)
 }
 
 func TestResumeRolloutAfterPauseDuration(t *testing.T) {
@@ -1591,7 +1757,7 @@ func TestNoResumeAfterPauseDurationIfUserPaused(t *testing.T) {
 			"message": "manually paused"
 		}
 	}`
-	assert.Equal(t, calculatePatch(r2, expectedPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, expectedPatch), patch)
 }
 
 func TestHandleNilNewRSOnScaleAndImageChange(t *testing.T) {
@@ -1638,7 +1804,7 @@ func TestHandleNilNewRSOnScaleAndImageChange(t *testing.T) {
 	patchIndex := f.expectPatchRolloutAction(r2)
 	f.run(getKey(r2, t))
 	patch := f.getPatchedRollout(patchIndex)
-	assert.Equal(t, calculatePatch(r2, OnlyObservedGenerationPatch), patch)
+	assert.JSONEq(t, calculatePatch(r2, OnlyObservedGenerationPatch), patch)
 }
 
 func TestHandleCanaryAbort(t *testing.T) {
@@ -1685,10 +1851,10 @@ func TestHandleCanaryAbort(t *testing.T) {
 		}`
 		errmsg := fmt.Sprintf(conditions.RolloutAbortedMessage, 2)
 		newConditions := generateConditionsPatch(true, conditions.RolloutAbortedReason, r2, false, "", false)
-		assert.Equal(t, calculatePatch(r2, fmt.Sprintf(expectedPatch, newConditions, conditions.RolloutAbortedReason, errmsg)), patch)
+		assert.JSONEq(t, calculatePatch(r2, fmt.Sprintf(expectedPatch, newConditions, conditions.RolloutAbortedReason, errmsg)), patch)
 	})
 
-	t.Run("Do not reset currentStepCount if newRS is stableRS", func(t *testing.T) {
+	t.Run("Do not reset currentStepCount and reset abort if newRS is stableRS", func(t *testing.T) {
 		f := newFixture(t)
 		defer f.Close()
 
@@ -1716,13 +1882,129 @@ func TestHandleCanaryAbort(t *testing.T) {
 		patch := f.getPatchedRollout(patchIndex)
 		expectedPatch := `{
 			"status":{
-				"conditions": %s,
-				"phase": "Degraded",
-				"message": "%s: %s"
+				"abort": null,
+				"abortedAt": null,
+				"conditions": %s
 			}
 		}`
-		errmsg := fmt.Sprintf(conditions.RolloutAbortedMessage, 1)
-		newConditions := generateConditionsPatch(true, conditions.RolloutAbortedReason, r1, false, "", true)
-		assert.Equal(t, calculatePatch(r1, fmt.Sprintf(expectedPatch, newConditions, conditions.RolloutAbortedReason, errmsg)), patch)
+		newConditions := generateConditionsPatch(true, conditions.ReplicaSetUpdatedReason, r1, false, "", true)
+		assert.JSONEq(t, calculatePatch(r1, fmt.Sprintf(expectedPatch, newConditions)), patch)
 	})
+}
+
+func TestIsDynamicallyRollingBackToStable(t *testing.T) {
+	newRSWithHashAndReplicas := func(hash string, available int32) *appsv1.ReplicaSet {
+		return &appsv1.ReplicaSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{
+					v1alpha1.DefaultRolloutUniqueLabelKey: hash,
+				},
+			},
+			Status: v1.ReplicaSetStatus{
+				AvailableReplicas: available,
+			},
+		}
+	}
+
+	testCases := []struct {
+		name                         string
+		status                       v1alpha1.RolloutStatus
+		trafficRoutingDisabled       bool
+		dynamicStableScalingDisabled bool
+		rsHash                       string
+		rsAvailableReplicas          *int32 // if nil, will set to rollout replicas
+		trafficWeights               *v1alpha1.TrafficWeights
+		expectedResult               bool
+	}{
+		{
+			name:           "desired RS != stable RS",
+			status:         v1alpha1.RolloutStatus{CurrentPodHash: "abc123", StableRS: "def456"},
+			rsHash:         "",
+			expectedResult: false,
+		},
+		{
+			name:                   "not using traffic routing",
+			trafficRoutingDisabled: true,
+			status:                 v1alpha1.RolloutStatus{CurrentPodHash: "abc123", StableRS: "abc123"},
+			rsHash:                 "",
+			expectedResult:         false,
+		},
+		{
+			name:                         "not using dynamicStableScaling",
+			dynamicStableScalingDisabled: true,
+			status:                       v1alpha1.RolloutStatus{CurrentPodHash: "abc123", StableRS: "abc123"},
+			rsHash:                       "",
+			expectedResult:               false,
+		},
+		{
+			name: "weighted selector == desired RS",
+			status: v1alpha1.RolloutStatus{
+				CurrentPodHash: "abc123",
+				StableRS:       "abc123",
+				Canary: v1alpha1.CanaryStatus{
+					Weights: &v1alpha1.TrafficWeights{
+						Canary: v1alpha1.WeightDestination{
+							PodTemplateHash: "abc123",
+						},
+					},
+				},
+			},
+			rsHash:         "abc123",
+			expectedResult: false,
+		},
+		{
+			name: "weighted selector != desired RS, desired not fully available",
+			status: v1alpha1.RolloutStatus{
+				CurrentPodHash: "abc123",
+				StableRS:       "abc123",
+				Canary: v1alpha1.CanaryStatus{
+					Weights: &v1alpha1.TrafficWeights{
+						Canary: v1alpha1.WeightDestination{
+							PodTemplateHash: "def456",
+						},
+					},
+				},
+			},
+			rsHash:              "abc123",
+			rsAvailableReplicas: pointer.Int32(1),
+			expectedResult:      true,
+		},
+		{
+			name: "weighted selector != desired RS, desired RS is fully available",
+			status: v1alpha1.RolloutStatus{
+				CurrentPodHash: "abc123",
+				StableRS:       "abc123",
+				Canary: v1alpha1.CanaryStatus{
+					Weights: &v1alpha1.TrafficWeights{
+						Canary: v1alpha1.WeightDestination{
+							PodTemplateHash: "def456",
+						},
+					},
+				},
+			},
+			rsHash:         "abc123",
+			expectedResult: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ro := newCanaryRollout("test", 10, nil, nil, nil, intstr.FromInt(0), intstr.FromInt(1))
+			if !tc.trafficRoutingDisabled {
+				ro.Spec.Strategy.Canary.TrafficRouting = &v1alpha1.RolloutTrafficRouting{}
+			}
+			if !tc.dynamicStableScalingDisabled {
+				ro.Spec.Strategy.Canary.DynamicStableScale = true
+			}
+			ro.Status = tc.status
+
+			desiredRS := newRSWithHashAndReplicas(tc.rsHash, 1)
+			if tc.rsAvailableReplicas != nil {
+				desiredRS.Status.AvailableReplicas = *tc.rsAvailableReplicas
+			}
+
+			rbToStable, _ := isDynamicallyRollingBackToStable(ro, desiredRS)
+
+			assert.Equal(t, tc.expectedResult, rbToStable)
+		})
+	}
 }
