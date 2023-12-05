@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -17,7 +18,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -207,12 +207,19 @@ func (e *EventRecorderAdapter) defaultEventf(object runtime.Object, warn bool, o
 		if kind == "Rollout" {
 			e.RolloutEventCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
 		}
-		err := e.sendNotifications(object, opts)
+
+		apis, err := e.apiFactory.GetAPIsFromNamespace(namespace)
 		if err != nil {
-			logCtx.Errorf("Notifications failed to send for eventReason %s with error: %s", opts.EventReason, err)
+			logCtx.Errorf("notifications failed to get apis for eventReason %s with error: %s", opts.EventReason, err)
 			e.NotificationFailedCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
 		}
-		e.NotificationSuccessCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
+
+		for _, api := range apis {
+			err := e.sendNotifications(api, object, opts)
+			if err != nil {
+				logCtx.Errorf("Notifications failed to send for eventReason %s with error: %s", opts.EventReason, err)
+			}
+		}
 	}
 
 	logFn := logCtx.Infof
@@ -239,7 +246,7 @@ func NewAPIFactorySettings() api.Settings {
 }
 
 // Send notifications for triggered event if user is subscribed
-func (e *EventRecorderAdapter) sendNotifications(object runtime.Object, opts EventOptions) error {
+func (e *EventRecorderAdapter) sendNotifications(notificationsAPI api.API, object runtime.Object, opts EventOptions) []error {
 	logCtx := logutil.WithObject(object)
 	_, namespace, name := logutil.KindNamespaceName(logCtx)
 	startTime := timeutil.Now()
@@ -248,16 +255,11 @@ func (e *EventRecorderAdapter) sendNotifications(object runtime.Object, opts Eve
 		e.NotificationSendPerformance.WithLabelValues(namespace, name).Observe(duration.Seconds())
 		logCtx.WithField("time_ms", duration.Seconds()*1e3).Debug("Notification sent")
 	}()
-	notificationsAPI, err := e.apiFactory.GetAPI()
-	if err != nil {
-		// don't return error if notifications are not configured and rollout has no subscribers
-		subsFromAnnotations := subscriptions.Annotations(object.(metav1.Object).GetAnnotations())
-		logCtx.Infof("subsFromAnnotations: %s", subsFromAnnotations)
-		if errors.IsNotFound(err) && len(subsFromAnnotations.GetDestinations(nil, map[string][]string{})) == 0 {
-			return nil
-		}
-		return err
+
+	if notificationsAPI == nil {
+		return []error{fmt.Errorf("NotificationsAPI is nil")}
 	}
+
 	cfg := notificationsAPI.GetConfig()
 	destByTrigger := cfg.GetGlobalDestinations(object.(metav1.Object).GetLabels())
 	destByTrigger.Merge(subscriptions.NewAnnotations(object.(metav1.Object).GetAnnotations()).GetDestinations(cfg.DefaultTriggers, cfg.ServiceDefaultTriggers))
@@ -270,39 +272,53 @@ func (e *EventRecorderAdapter) sendNotifications(object runtime.Object, opts Eve
 
 	objMap, err := toObjectMap(object)
 	if err != nil {
-		return err
+		return []error{err}
 	}
 
 	emptyCondition := hash("")
 
+	// We should not return in these loops because we want other configured notifications to still send if they can.
+	errors := []error{}
 	for _, destination := range destinations {
 		res, err := notificationsAPI.RunTrigger(trigger, objMap)
 		if err != nil {
-			log.Errorf("Failed to execute condition of trigger %s: %v", trigger, err)
-			return err
+			log.Errorf("Failed to run trigger, trigger: %s, destination: %s, namespace config: %s : %v",
+				trigger, destination, notificationsAPI.GetConfig().Namespace, err)
+			errors = append(errors, err)
+			continue
 		}
 		log.Infof("Trigger %s result: %v", trigger, res)
 
 		for _, c := range res {
-			log.Infof("Res When Condition hash: %s, Templates: %s", c.Key, c.Templates)
+			log.Infof("Result when condition hash: %s, templates: %s", c.Key, c.Templates)
 			s := strings.Split(c.Key, ".")[1]
 			if s != emptyCondition && c.Triggered == true {
 				err = notificationsAPI.Send(objMap, c.Templates, destination)
 				if err != nil {
-					log.Errorf("notification error: %s", err.Error())
-					return err
+					log.Errorf("Failed to execute the sending of notification on not empty condition, trigger: %s, destination: %s, namespace config: %s : %v",
+						trigger, destination, notificationsAPI.GetConfig().Namespace, err)
+					e.NotificationFailedCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
+					errors = append(errors, err)
+					continue
 				}
+				e.NotificationSuccessCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
 			} else if s == emptyCondition {
 				err = notificationsAPI.Send(objMap, c.Templates, destination)
 				if err != nil {
-					log.Errorf("notification error: %s", err.Error())
-					return err
+					log.Errorf("Failed to execute the sending of notification on empty condition, trigger: %s, destination: %s, namespace config: %s : %v",
+						trigger, destination, notificationsAPI.GetConfig().Namespace, err)
+					e.NotificationFailedCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
+					errors = append(errors, err)
+					continue
 				}
+				e.NotificationSuccessCounter.WithLabelValues(namespace, name, opts.EventType, opts.EventReason).Inc()
 			}
 		}
 	}
-
-	return nil
+	if len(errors) == 0 {
+		return nil
+	}
+	return errors
 }
 
 // This function is copied over from notification engine to make sure we honour emptyCondition

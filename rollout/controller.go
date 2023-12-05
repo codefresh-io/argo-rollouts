@@ -56,6 +56,7 @@ import (
 	logutil "github.com/argoproj/argo-rollouts/utils/log"
 	"github.com/argoproj/argo-rollouts/utils/record"
 	replicasetutil "github.com/argoproj/argo-rollouts/utils/replicaset"
+	rolloututil "github.com/argoproj/argo-rollouts/utils/rollout"
 	serviceutil "github.com/argoproj/argo-rollouts/utils/service"
 	timeutil "github.com/argoproj/argo-rollouts/utils/time"
 	unstructuredutil "github.com/argoproj/argo-rollouts/utils/unstructured"
@@ -131,6 +132,7 @@ type reconcilerBase struct {
 	replicaSetSynced              cache.InformerSynced
 	rolloutsInformer              cache.SharedIndexInformer
 	rolloutsLister                listers.RolloutLister
+	replicaSetInformer            cache.SharedIndexInformer
 	rolloutsSynced                cache.InformerSynced
 	rolloutsIndexer               cache.Indexer
 	servicesLister                v1.ServiceLister
@@ -175,7 +177,6 @@ func NewController(cfg ControllerConfig) *Controller {
 			controllerutil.EnqueueAfter(obj, duration, cfg.RolloutWorkQueue)
 		},
 	}
-
 	base := reconcilerBase{
 		kubeclientset:                 cfg.KubeClientSet,
 		argoprojclientset:             cfg.ArgoProjClientset,
@@ -184,6 +185,7 @@ func NewController(cfg ControllerConfig) *Controller {
 		replicaSetLister:              cfg.ReplicaSetInformer.Lister(),
 		replicaSetSynced:              cfg.ReplicaSetInformer.Informer().HasSynced,
 		rolloutsInformer:              cfg.RolloutsInformer.Informer(),
+		replicaSetInformer:            cfg.ReplicaSetInformer.Informer(),
 		rolloutsIndexer:               cfg.RolloutsInformer.Informer().GetIndexer(),
 		rolloutsLister:                cfg.RolloutsInformer.Lister(),
 		rolloutsSynced:                cfg.RolloutsInformer.Informer().HasSynced,
@@ -228,7 +230,20 @@ func NewController(cfg ControllerConfig) *Controller {
 	log.Info("Setting up event handlers")
 	// Set up an event handler for when rollout resources change
 	cfg.RolloutsInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueRollout,
+		AddFunc: func(obj interface{}) {
+			controller.enqueueRollout(obj)
+			ro := unstructuredutil.ObjectToRollout(obj)
+			if ro != nil {
+				if cfg.Recorder != nil {
+					cfg.Recorder.Eventf(ro, record.EventOptions{
+						EventType:   corev1.EventTypeNormal,
+						EventReason: conditions.RolloutAddedToInformerReason,
+					}, "Rollout resource added to informer: %s/%s", ro.Namespace, ro.Name)
+				} else {
+					log.Warnf("Recorder is not configured")
+				}
+			}
+		},
 		UpdateFunc: func(old, new interface{}) {
 			oldRollout := unstructuredutil.ObjectToRollout(old)
 			newRollout := unstructuredutil.ObjectToRollout(new)
@@ -499,12 +514,17 @@ func (c *Controller) newRolloutContext(rollout *v1alpha1.Rollout) (*rolloutConte
 		newStatus: v1alpha1.RolloutStatus{
 			RestartedAt: rollout.Status.RestartedAt,
 			ALB:         rollout.Status.ALB,
+			ALBs:        rollout.Status.ALBs,
 		},
 		pauseContext: &pauseContext{
 			rollout: rollout,
 			log:     logCtx,
 		},
 		reconcilerBase: c.reconcilerBase,
+	}
+	if rolloututil.IsFullyPromoted(rollout) && roCtx.pauseContext.IsAborted() {
+		logCtx.Warnf("Removing abort condition from fully promoted rollout")
+		roCtx.pauseContext.RemoveAbort()
 	}
 	// carry over existing recorded weights
 	roCtx.newStatus.Canary.Weights = rollout.Status.Canary.Weights
@@ -566,8 +586,14 @@ func (c *rolloutContext) getRolloutReferencedResources() (*validation.Referenced
 	}
 	refResources.AnalysisTemplatesWithType = *analysisTemplates
 
-	// // Validate Rollout Nginx Ingress Controller before referencing
+	// Validate Rollout Nginx Ingress Controller before referencing
 	err = validation.ValidateRolloutNginxIngressesConfig(c.rollout)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate Rollout ALB Ingress Controller before referencing
+	err = validation.ValidateRolloutAlbIngressesConfig(c.rollout)
 	if err != nil {
 		return nil, err
 	}
@@ -840,14 +866,27 @@ func (c *rolloutContext) getReferencedNginxIngresses(canary *v1alpha1.CanaryStra
 	return &ingresses, nil
 }
 
-// return nil, field.Invalid(fldPath.Child("alb", "ingress"), canary.TrafficRouting.ALB.Ingress, err.Error())
 func (c *rolloutContext) getReferencedALBIngresses(canary *v1alpha1.CanaryStrategy) (*[]ingressutil.Ingress, error) {
 	ingresses := []ingressutil.Ingress{}
-	ingress, err := c.ingressWrapper.GetCached(c.rollout.Namespace, canary.TrafficRouting.ALB.Ingress)
-	if err != nil {
-		return handleCacheError("alb", []string{"ingress"}, canary.TrafficRouting.ALB.Ingress, err)
+
+	// The rollout resource manages more than 1 ingress.
+	if canary.TrafficRouting.ALB.Ingresses != nil {
+		for _, ing := range canary.TrafficRouting.ALB.Ingresses {
+			ingress, err := c.ingressWrapper.GetCached(c.rollout.Namespace, ing)
+			if err != nil {
+				return handleCacheError("alb", []string{"ingresses"}, canary.TrafficRouting.ALB.Ingresses, err)
+			}
+			ingresses = append(ingresses, *ingress)
+		}
+	} else {
+		// The rollout resource manages only 1 ingress.
+		ingress, err := c.ingressWrapper.GetCached(c.rollout.Namespace, canary.TrafficRouting.ALB.Ingress)
+		if err != nil {
+			return handleCacheError("alb", []string{"ingress"}, canary.TrafficRouting.ALB.Ingress, err)
+		}
+		ingresses = append(ingresses, *ingress)
 	}
-	ingresses = append(ingresses, *ingress)
+
 	return &ingresses, nil
 }
 

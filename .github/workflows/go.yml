@@ -11,7 +11,7 @@ on:
       - "master"
 env:
   # Golang version to use across CI steps
-  GOLANG_VERSION: '1.19'
+  GOLANG_VERSION: '1.20'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v4.1.0
         with:
           go-version: ${{ env.GOLANG_VERSION }}
       - name: Checkout code
@@ -43,14 +43,14 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.49.0
+          version: v1.53.3
           args: --timeout 6m
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v4.1.0
         with:
           go-version: ${{ env.GOLANG_VERSION }}
         id: go
@@ -89,7 +89,7 @@ jobs:
           path: coverage.out
 
       - name: Upload code coverage information to codecov.io
-        uses: codecov/codecov-action@v3.1.1
+        uses: codecov/codecov-action@v3.1.4
         with:
           file: coverage.out
 
@@ -102,7 +102,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3.1.0
       - name: Setup Golang
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v4.1.0
         with:
           go-version: ${{ env.GOLANG_VERSION }}
       # k8s codegen generates files into GOPATH location instead of the GitHub git checkout location

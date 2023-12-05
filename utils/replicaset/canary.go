@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	// EphemeralMetadataAnnotation denotes pod metadata which are ephemerally injected to canary/stable pods
+	// EphemeralMetadataAnnotation denotes pod metadata which is ephemerally injected to canary/stable pods
 	EphemeralMetadataAnnotation = "rollout.argoproj.io/ephemeral-metadata"
 )
 
@@ -41,8 +41,13 @@ func AtDesiredReplicaCountsForCanary(ro *v1alpha1.Rollout, newRS, stableRS *apps
 			return false
 		}
 	}
-	if GetAvailableReplicaCountForReplicaSets(olderRSs) != int32(0) {
-		return false
+	if ro.Spec.Strategy.Canary.TrafficRouting == nil {
+		// For basic canary, all older ReplicaSets must be scaled to zero since they serve traffic.
+		// For traffic weighted canary, it's okay if they are still scaled up, since the traffic
+		// router will prevent them from serving traffic
+		if GetAvailableReplicaCountForReplicaSets(olderRSs) != int32(0) {
+			return false
+		}
 	}
 	return true
 }
@@ -425,8 +430,8 @@ func GetReplicasForScaleDown(rs *appsv1.ReplicaSet, ignoreAvailability bool) int
 		// The ReplicaSet is already going to scale down replicas since the availableReplica count is bigger
 		// than the spec count. The controller uses the .Spec.Replicas to prevent the controller from
 		// assuming the extra replicas (availableReplica - .Spec.Replicas) are going to remain available.
-		// Otherwise, the controller use those extra replicas to scale down more replicas and potentially
-		// violate the min available.
+		// Otherwise, the controller uses those extra replicas to scale down more replicas and potentially
+		// violates the min available.
 		return *rs.Spec.Replicas
 	}
 	if ignoreAvailability {
