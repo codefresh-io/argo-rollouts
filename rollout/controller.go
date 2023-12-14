@@ -338,7 +338,7 @@ func (c *Controller) Run(ctx context.Context, threadiness int) error {
 			wg.Done()
 		}, time.Second, ctx.Done())
 	}
-	log.Info("Started rollout workers")
+	log.Infof("Started rollout workers %d", threadiness)
 
 	wg.Add(1)
 	go c.IstioController.Run(ctx)
