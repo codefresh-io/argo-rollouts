@@ -834,7 +834,7 @@ func (c *rolloutContext) requeueStuckRollout(newStatus v1alpha1.RolloutStatus) t
 		return time.Duration(0)
 	}
 	logCtx := logutil.WithRollout(c.rollout)
-	logCtx.Info("Queueing up rollout for a progress after %ds", int(after.Seconds()))
+	logCtx.Infof("Queueing up rollout for a progress after %ds", int(after.Seconds()))
 	// Add a second to avoid milliseconds skew in AddAfter.
 	// See https://github.com/kubernetes/kubernetes/issues/39785#issuecomment-279959133 for more info.
 	c.enqueueRolloutAfter(c.rollout, after+time.Second)
