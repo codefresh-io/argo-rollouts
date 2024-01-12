@@ -2,6 +2,7 @@ package rollout
 
 import (
 	"fmt"
+	logutil "github.com/argoproj/argo-rollouts/utils/log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -283,6 +284,8 @@ func (c *rolloutContext) reconcileTrafficRouting() error {
 				c.log.Infof("Desired weight (stepIdx: %s) %d verified", indexString, desiredWeight)
 			} else {
 				c.log.Infof("Desired weight (stepIdx: %s) %d not yet verified", indexString, desiredWeight)
+				logCtx := logutil.WithRollout(c.rollout)
+				logCtx.Info("rollout enqueue due to trafficrouting")
 				c.enqueueRolloutAfter(c.rollout, defaults.GetRolloutVerifyRetryInterval())
 			}
 		}
