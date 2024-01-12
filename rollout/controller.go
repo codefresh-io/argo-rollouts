@@ -234,6 +234,8 @@ func NewController(cfg ControllerConfig) *Controller {
 			controller.enqueueRollout(obj)
 			ro := unstructuredutil.ObjectToRollout(obj)
 			if ro != nil {
+				logCtx := logutil.WithRollout(ro)
+				logCtx.Info("rollout enqueue due to add event")
 				if cfg.Recorder != nil {
 					cfg.Recorder.Eventf(ro, record.EventOptions{
 						EventType:   corev1.EventTypeNormal,
@@ -258,12 +260,16 @@ func NewController(cfg ControllerConfig) *Controller {
 					controller.IstioController.EnqueueDestinationRule(key)
 				}
 			}
+			if newRollout != nil {
+				logCtx := logutil.WithRollout(newRollout)
+				logCtx.Info("rollout enqueue due to update event")
+			}
 			controller.enqueueRollout(new)
 		},
 		DeleteFunc: func(obj interface{}) {
 			if ro := unstructuredutil.ObjectToRollout(obj); ro != nil {
 				logCtx := logutil.WithRollout(ro)
-				logCtx.Info("rollout deleted")
+				logCtx.Info("rollout enqueue due to delete event")
 				controller.metricsServer.Remove(ro.Namespace, ro.Name, logutil.RolloutKey)
 				// Rollout is deleted, queue up the referenced Service and/or DestinationRules so
 				// that the rollouts-pod-template-hash can be cleared from each
