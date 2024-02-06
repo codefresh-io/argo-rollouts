@@ -3,6 +3,8 @@ package rollout
 import (
 	"time"
 
+	logutil "github.com/argoproj/argo-rollouts/utils/log"
+
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -56,6 +58,8 @@ func (c *rolloutContext) reconcile() error {
 	err := c.getRolloutValidationErrors()
 	if err != nil {
 		if vErr, ok := err.(*field.Error); ok {
+			logCtx := logutil.WithRollout(c.rollout)
+			logCtx.Info("rollout enqueue due reconcile error")
 			// We want to frequently requeue rollouts with InvalidSpec errors, because the error
 			// condition might be timing related (e.g. the Rollout was applied before the Service).
 			c.enqueueRolloutAfter(c.rollout, 20*time.Second)
