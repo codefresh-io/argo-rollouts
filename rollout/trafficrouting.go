@@ -2,10 +2,11 @@ package rollout
 
 import (
 	"fmt"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
 	"reflect"
 	"strconv"
 	"strings"
+
+	logutil "github.com/argoproj/argo-rollouts/utils/log"
 
 	"github.com/argoproj/argo-rollouts/utils/annotations"
 

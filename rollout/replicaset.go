@@ -3,9 +3,10 @@ package rollout
 import (
 	"context"
 	"fmt"
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
 	"sort"
 	"time"
+
+	logutil "github.com/argoproj/argo-rollouts/utils/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

@@ -1,8 +1,9 @@
 package rollout
 
 import (
-	logutil "github.com/argoproj/argo-rollouts/utils/log"
 	"time"
+
+	logutil "github.com/argoproj/argo-rollouts/utils/log"
 
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
