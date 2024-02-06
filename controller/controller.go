@@ -85,7 +85,7 @@ const (
 	DefaultIngressThreads = 10
 
 	// DefaultLeaderElect is the default true leader election should be enabled
-	DefaultLeaderElect = false
+	DefaultLeaderElect = true
 
 	// DefaultLeaderElectionLeaseDuration is the default time in seconds that non-leader candidates will wait to force acquire leadership
 	DefaultLeaderElectionLeaseDuration = 15 * time.Second
