@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	logutil "github.com/argoproj/argo-rollouts/utils/log"
+
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -150,6 +152,8 @@ func (c *rolloutContext) reconcileNewReplicaSet() (bool, error) {
 					c.log.Infof("RS '%s' has not reached the scaleDownTime", c.newRS.Name)
 					remainingTime := scaleDownAt.Sub(now.Time)
 					if remainingTime < c.resyncPeriod {
+						logCtx := logutil.WithRollout(c.rollout)
+						logCtx.Info("rollout enqueue due to scaleDownDelay")
 						c.enqueueRolloutAfter(c.rollout, remainingTime)
 						return false, nil
 					}
@@ -300,6 +304,8 @@ func (c *rolloutContext) scaleDownDelayHelper(rs *appsv1.ReplicaSet, annotatione
 			if err != nil {
 				return annotationedRSs, desiredReplicaCount, err
 			}
+			logCtx := logutil.WithRollout(c.rollout)
+			logCtx.Info("rollout enqueue due to scaleDownDelay v2")
 			c.enqueueRolloutAfter(c.rollout, scaleDownDelaySeconds)
 		}
 	} else if replicasetutil.HasScaleDownDeadline(rs) {
@@ -313,6 +319,8 @@ func (c *rolloutContext) scaleDownDelayHelper(rs *appsv1.ReplicaSet, annotatione
 			} else if remainingTime != nil {
 				c.log.Infof("RS '%s' has not reached the scaleDownTime", rs.Name)
 				if *remainingTime < c.resyncPeriod {
+					logCtx := logutil.WithRollout(c.rollout)
+					logCtx.Info("rollout enqueue due to scaleDownDelay v3")
 					c.enqueueRolloutAfter(c.rollout, *remainingTime)
 				}
 				desiredReplicaCount = rolloutReplicas
