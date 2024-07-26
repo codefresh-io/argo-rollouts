@@ -202,7 +202,7 @@ func (r *Reconciler) VerifyWeight(desiredWeight int32, additionalDestinations ..
 		return nil, nil
 	}
 
-	if !rolloututil.ShouldVerifyWeight(r.cfg.Rollout) {
+	if !rolloututil.ShouldVerifyWeight(r.cfg.Rollout, desiredWeight) {
 		// If we should not verify weight but the ALB status has not been set yet due to a Rollout resource just being
 		// installed in the cluster we want to actually run the rest of the function, so we do not return if
 		// r.cfg.Rollout.Status.ALB is nil. However, if we should not verify, and we have already updated the status once
@@ -242,7 +242,7 @@ func (r *Reconciler) VerifyWeightPerIngress(desiredWeight int32, ingresses []str
 		}
 		resourceIDToDest := map[string]v1alpha1.WeightDestination{}
 
-		stableService, canaryService := trafficrouting.GetStableAndCanaryServices(rollout)
+		stableService, canaryService := trafficrouting.GetStableAndCanaryServices(rollout, true)
 		canaryResourceID := aws.BuildTargetGroupResourceID(rollout.Namespace, ingress.GetName(), canaryService, rollout.Spec.Strategy.Canary.TrafficRouting.ALB.ServicePort)
 		stableResourceID := aws.BuildTargetGroupResourceID(rollout.Namespace, ingress.GetName(), stableService, rollout.Spec.Strategy.Canary.TrafficRouting.ALB.ServicePort)
 
@@ -251,22 +251,22 @@ func (r *Reconciler) VerifyWeightPerIngress(desiredWeight int32, ingresses []str
 			resourceIDToDest[resourceID] = dest
 		}
 
-		loadBalancerStatus := ingress.GetLoadBalancerStatus()
-		if len(loadBalancerStatus.Ingress) == 0 {
+		hostnames := ingress.GetLoadBalancerHostnames()
+		if len(hostnames) == 0 {
 			r.log.Infof("LoadBalancer not yet allocated")
 		}
 
-		for _, lbIngress := range loadBalancerStatus.Ingress {
-			if lbIngress.Hostname == "" {
+		for _, hostname := range hostnames {
+			if hostname == "" {
 				continue
 			}
-			lb, err := r.aws.FindLoadBalancerByDNSName(ctx, lbIngress.Hostname)
+			lb, err := r.aws.FindLoadBalancerByDNSName(ctx, hostname)
 			if err != nil {
 				r.cfg.Recorder.Warnf(rollout, record.EventOptions{EventReason: conditions.TargetGroupVerifyErrorReason}, conditions.TargetGroupVerifyErrorMessage, canaryService, "unknown", err.Error())
 				return pointer.Bool(false), err
 			}
 			if lb == nil || lb.LoadBalancerArn == nil {
-				r.cfg.Recorder.Warnf(rollout, record.EventOptions{EventReason: conditions.LoadBalancerNotFoundReason}, conditions.LoadBalancerNotFoundMessage, lbIngress.Hostname)
+				r.cfg.Recorder.Warnf(rollout, record.EventOptions{EventReason: conditions.LoadBalancerNotFoundReason}, conditions.LoadBalancerNotFoundMessage, hostname)
 				return pointer.Bool(false), nil
 			}
 
@@ -347,7 +347,7 @@ func updateTargetGroupStatus(status *v1alpha1.ALBStatus, tg *aws.TargetGroupMeta
 }
 
 func getForwardActionString(r *v1alpha1.Rollout, port int32, desiredWeight int32, additionalDestinations ...v1alpha1.WeightDestination) (string, error) {
-	stableService, canaryService := trafficrouting.GetStableAndCanaryServices(r)
+	stableService, canaryService := trafficrouting.GetStableAndCanaryServices(r, true)
 	portStr := strconv.Itoa(int(port))
 	stableWeight := int32(100)
 	targetGroups := make([]ingressutil.ALBTargetGroup, 0)
@@ -479,7 +479,7 @@ func removeValue(array []string, key string) []string {
 }
 
 func getTrafficForwardActionString(r *v1alpha1.Rollout, port int32) (string, error) {
-	_, canaryService := trafficrouting.GetStableAndCanaryServices(r)
+	_, canaryService := trafficrouting.GetStableAndCanaryServices(r, true)
 	portStr := strconv.Itoa(int(port))
 	weight := int64(100)
 	targetGroups := make([]ingressutil.ALBTargetGroup, 0)
@@ -515,17 +515,28 @@ func getTrafficForwardActionString(r *v1alpha1.Rollout, port int32) (string, err
 	return string(bytes), nil
 }
 
+// Two exact matches with the same header name should be merged into the values array of the same condition
+func upsertCondition(res []ingressutil.ALBCondition, match v1alpha1.HeaderRoutingMatch) []ingressutil.ALBCondition {
+	for i, condition := range res {
+		if condition.HttpHeaderConfig.HttpHeaderName == match.HeaderName {
+			res[i].HttpHeaderConfig.Values = append(res[i].HttpHeaderConfig.Values, match.HeaderValue.Exact)
+			return res
+		}
+	}
+	condition := ingressutil.ALBCondition{
+		Field: "http-header",
+		HttpHeaderConfig: ingressutil.HttpHeaderConfig{
+			HttpHeaderName: match.HeaderName,
+			Values:         []string{match.HeaderValue.Exact},
+		},
+	}
+	return append(res, condition)
+}
+
 func getTrafficForwardConditionString(headerRoute *v1alpha1.SetHeaderRoute) (string, error) {
 	var res []ingressutil.ALBCondition
 	for _, match := range headerRoute.Match {
-		condition := ingressutil.ALBCondition{
-			Field: "http-header",
-			HttpHeaderConfig: ingressutil.HttpHeaderConfig{
-				HttpHeaderName: match.HeaderName,
-				Values:         []string{match.HeaderValue.Exact},
-			},
-		}
-		res = append(res, condition)
+		res = upsertCondition(res, match)
 	}
 	bytes := jsonutil.MustMarshal(res)
 	return string(bytes), nil

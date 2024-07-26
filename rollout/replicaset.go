@@ -36,7 +36,7 @@ func (c *rolloutContext) removeScaleDownDelay(rs *appsv1.ReplicaSet) error {
 		return nil
 	}
 	patch := fmt.Sprintf(removeScaleDownAtAnnotationsPatch, v1alpha1.DefaultReplicaSetScaleDownDeadlineAnnotationKey)
-	_, err := c.kubeclientset.AppsV1().ReplicaSets(rs.Namespace).Patch(ctx, rs.Name, patchtypes.JSONPatchType, []byte(patch), metav1.PatchOptions{})
+	rs, err := c.kubeclientset.AppsV1().ReplicaSets(rs.Namespace).Patch(ctx, rs.Name, patchtypes.JSONPatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return fmt.Errorf("error removing scale-down-deadline annotation from RS '%s': %w", rs.Name, err)
 	}
@@ -176,6 +176,22 @@ func (c *rolloutContext) reconcileNewReplicaSet() (bool, error) {
 	}
 
 	scaled, _, err := c.scaleReplicaSetAndRecordEvent(c.newRS, newReplicasCount)
+
+	if err != nil {
+		return scaled, fmt.Errorf("failed to scaleReplicaSetAndRecordEvent in reconcileNewReplicaSet: %w", err)
+	}
+
+	revision, _ := replicasetutil.Revision(c.newRS)
+
+	if revision == 1 && c.rollout.Spec.WorkloadRef != nil && c.rollout.Spec.WorkloadRef.ScaleDown == v1alpha1.ScaleDownProgressively {
+		oldScale := defaults.GetReplicasOrDefault(c.newRS.Spec.Replicas)
+		// scale down the deployment when the rollout has ready replicas or scale up the deployment if rollout fails
+		if c.rollout.Spec.Replicas != nil && (c.rollout.Status.ReadyReplicas > 0 || oldScale > newReplicasCount) {
+			targetScale := *c.rollout.Spec.Replicas - c.rollout.Status.ReadyReplicas
+			err = c.scaleDeployment(&targetScale)
+		}
+	}
+
 	return scaled, err
 }
 
@@ -267,7 +283,7 @@ func (c *rolloutContext) cleanupUnhealthyReplicas(oldRSs []*appsv1.ReplicaSet) (
 		}
 		_, updatedOldRS, err := c.scaleReplicaSetAndRecordEvent(targetRS, newReplicasCount)
 		if err != nil {
-			return nil, totalScaledDown, err
+			return nil, totalScaledDown, fmt.Errorf("failed to scaleReplicaSetAndRecordEvent in cleanupUnhealthyReplicas: %w", err)
 		}
 		totalScaledDown += scaledDownCount
 		oldRSs[i] = updatedOldRS

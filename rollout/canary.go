@@ -1,6 +1,7 @@
 package rollout
 
 import (
+	"fmt"
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,14 +22,14 @@ func (c *rolloutContext) rolloutCanary() error {
 	if replicasetutil.PodTemplateOrStepsChanged(c.rollout, c.newRS) {
 		c.newRS, err = c.getAllReplicaSetsAndSyncRevision(false)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to getAllReplicaSetsAndSyncRevision in rolloutCanary with PodTemplateOrStepsChanged: %w", err)
 		}
 		return c.syncRolloutStatusCanary()
 	}
 
 	c.newRS, err = c.getAllReplicaSetsAndSyncRevision(true)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to getAllReplicaSetsAndSyncRevision in rolloutCanary create true: %w", err)
 	}
 
 	err = c.podRestarter.Reconcile(c)
@@ -110,6 +111,9 @@ func (c *rolloutContext) reconcileCanaryStableReplicaSet() (bool, error) {
 		_, desiredStableRSReplicaCount = replicasetutil.CalculateReplicaCountsForTrafficRoutedCanary(c.rollout, c.rollout.Status.Canary.Weights)
 	}
 	scaled, _, err := c.scaleReplicaSetAndRecordEvent(c.stableRS, desiredStableRSReplicaCount)
+	if err != nil {
+		return scaled, fmt.Errorf("failed to scaleReplicaSetAndRecordEvent in reconcileCanaryStableReplicaSet: %w", err)
+	}
 	return scaled, err
 }
 
@@ -180,7 +184,7 @@ func (c *rolloutContext) scaleDownOldReplicaSetsForCanary(oldRSs []*appsv1.Repli
 
 	annotationedRSs := int32(0)
 	for _, targetRS := range oldRSs {
-		if c.isReplicaSetReferenced(targetRS) {
+		if c.rollout.Spec.Strategy.Canary.TrafficRouting != nil && c.isReplicaSetReferenced(targetRS) {
 			// We might get here if user interrupted an an update in order to move back to stable.
 			c.log.Infof("Skip scale down of older RS '%s': still referenced", targetRS.Name)
 			continue
@@ -230,7 +234,7 @@ func (c *rolloutContext) scaleDownOldReplicaSetsForCanary(oldRSs []*appsv1.Repli
 		// Scale down.
 		_, _, err = c.scaleReplicaSetAndRecordEvent(targetRS, desiredReplicaCount)
 		if err != nil {
-			return totalScaledDown, err
+			return totalScaledDown, fmt.Errorf("failed to scaleReplicaSetAndRecordEvent in scaleDownOldReplicaSetsForCanary: %w", err)
 		}
 		scaleDownCount := *targetRS.Spec.Replicas - desiredReplicaCount
 		maxScaleDown -= scaleDownCount
@@ -292,7 +296,7 @@ func (c *rolloutContext) canProceedWithScaleDownAnnotation(oldRSs []*appsv1.Repl
 		// AWS API calls.
 		return true, nil
 	}
-	stableSvcName, _ := trafficrouting.GetStableAndCanaryServices(c.rollout)
+	stableSvcName, _ := trafficrouting.GetStableAndCanaryServices(c.rollout, true)
 	stableSvc, err := c.servicesLister.Services(c.rollout.Namespace).Get(stableSvcName)
 	if err != nil {
 		return false, err
@@ -433,6 +437,13 @@ func (c *rolloutContext) reconcileCanaryReplicaSets() (bool, error) {
 	if scaledStableRS {
 		c.log.Infof("Not finished reconciling stableRS")
 		return true, nil
+	}
+
+	// If we have updated both the replica count and the pod template hash c.newRS will be nil we want to reconcile the newRS so we look at the
+	// rollout status to get the newRS to reconcile it.
+	if c.newRS == nil && c.rollout.Status.CurrentPodHash != c.rollout.Status.StableRS {
+		rs, _ := replicasetutil.GetReplicaSetByTemplateHash(c.allRSs, c.rollout.Status.CurrentPodHash)
+		c.newRS = rs
 	}
 
 	scaledNewRS, err := c.reconcileNewReplicaSet()

@@ -33,6 +33,13 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: rollout-ref-deployment
+    # Specifies if the workload (Deployment) is scaled down after migrating to Rollout.
+    # The possible options are:
+    # "never": the Deployment is not scaled down
+    # "onsuccess": the Deployment is scaled down after the Rollout becomes healthy
+    # "progressively": as the Rollout is scaled up the Deployment is scaled down
+    # If the Rollout fails the Deployment will be scaled back up.
+    scaleDown: never|onsuccess|progressively
 
   # Template describes the pods that will be created. Same as deployment.
   # If used, then do not use Rollout workloadRef property. 
@@ -379,6 +386,9 @@ spec:
       # will achieve traffic split via a weighted replica counts between
       # the canary and stable ReplicaSet.
       trafficRouting:
+        # Supports nginx and plugins only: This lets you control the denominator or total weight of traffic.
+        # The total weight of traffic. If unspecified, it defaults to 100
+        maxTrafficWeight: 1000
         # This is a list of routes that Argo Rollouts has the rights to manage it is currently only required for
         # setMirrorRoute and setHeaderRoute. The order of managedRoutes array also sets the precedence of the route
         # in the traffic router. Argo Rollouts will place these routes in the order specified above any routes already

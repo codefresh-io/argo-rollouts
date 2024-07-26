@@ -17,14 +17,14 @@ The GitHub notification service changes commit status using [GitHub Apps](https:
 3. Generate a private key, and download it automatically
 ![3](https://user-images.githubusercontent.com/18019529/108397926-d4a36300-725b-11eb-83fe-74795c8c3e03.png)
 4. Install app to account
-5. Store privateKey in `argocd-notifications-secret` Secret and configure GitHub integration
-in `argocd-notifications-cm` ConfigMap
+5. Store privateKey in `argo-rollouts-notification-secret` Secret and configure GitHub integration
+in `argo-rollouts-notification-configmap` ConfigMap
 
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: <config-map-name>
+  name: argo-rollouts-notification-configmap
 data:
   service.github: |
     appID: <app-id>
@@ -76,6 +76,7 @@ template.app-deployed: |
       logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
       requiredContexts: []
       autoMerge: true
+      transientEnvironment: false
     pullRequestComment:
       content: |
         Application {{.app.metadata.name}} is now running new version of deployments manifests.
@@ -87,5 +88,5 @@ template.app-deployed: |
 - If `github.repoURLPath` and `github.revisionPath` are same as above, they can be omitted.
 - Automerge is optional and `true` by default for github deployments to ensure the requested ref is up to date with the default branch.
   Setting this option to `false` is required if you would like to deploy older refs in your default branch.
-  For more information see the [Github Deployment API Docs](https://docs.github.com/en/rest/deployments/deployments?apiVersion=2022-11-28#create-a-deployment).
+  For more information see the [GitHub Deployment API Docs](https://docs.github.com/en/rest/deployments/deployments?apiVersion=2022-11-28#create-a-deployment).
 - If `github.pullRequestComment.content` is set to 65536 characters or more, it will be truncated.

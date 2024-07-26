@@ -116,10 +116,6 @@ spec:
       priority: 2
 `
 
-var (
-	client *mocks.FakeClient = &mocks.FakeClient{}
-)
-
 const (
 	stableServiceName     string = "stable-rollout"
 	fakeStableServiceName string = "fake-stable-rollout"
@@ -135,7 +131,7 @@ func TestUpdateHash(t *testing.T) {
 		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 
@@ -152,10 +148,9 @@ func TestSetWeight(t *testing.T) {
 	mocks.ErrorApisixRouteObj = toUnstructured(t, errorApisixRoute)
 	t.Run("SetWeight", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 
@@ -172,7 +167,7 @@ func TestSetWeight(t *testing.T) {
 		backends, err := GetBackends(apisixHttpRouteObj)
 		assert.NoError(t, err)
 		for _, backend := range backends {
-			typedBackend, ok := backend.(map[string]interface{})
+			typedBackend, ok := backend.(map[string]any)
 			assert.Equal(t, ok, true)
 			nameOfCurrentBackend, isFound, err := unstructured.NestedString(typedBackend, "serviceName")
 			assert.NoError(t, err)
@@ -195,7 +190,6 @@ func TestSetWeight(t *testing.T) {
 	})
 	t.Run("SetWeightWithError", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -212,7 +206,6 @@ func TestSetWeight(t *testing.T) {
 	})
 	t.Run("SetWeightWithErrorManifest", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -229,10 +222,9 @@ func TestSetWeight(t *testing.T) {
 	})
 	t.Run("SetWeightWithErrorStableName", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(fakeStableServiceName, canaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 
@@ -244,10 +236,9 @@ func TestSetWeight(t *testing.T) {
 	})
 	t.Run("SetWeightWithErrorCanaryName", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, fakeCanaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 
@@ -259,7 +250,6 @@ func TestSetWeight(t *testing.T) {
 	})
 	t.Run("ApisixUpdateError", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -279,7 +269,7 @@ func TestSetWeight(t *testing.T) {
 
 func TestGetHttpRouteError(t *testing.T) {
 	type testcase struct {
-		routes []interface{}
+		routes []any
 		ref    string
 	}
 	testcases := []testcase{
@@ -288,28 +278,28 @@ func TestGetHttpRouteError(t *testing.T) {
 			ref:    "nil",
 		},
 		{
-			routes: []interface{}{""},
+			routes: []any{""},
 			ref:    "Failed type",
 		},
 		{
-			routes: []interface{}{
-				map[string]interface{}{
+			routes: []any{
+				map[string]any{
 					"x": nil,
 				},
 			},
 			ref: "noname",
 		},
 		{
-			routes: []interface{}{
-				map[string]interface{}{
+			routes: []any{
+				map[string]any{
 					"name": 123,
 				},
 			},
 			ref: "name type error",
 		},
 		{
-			routes: []interface{}{
-				map[string]interface{}{
+			routes: []any{
+				map[string]any{
 					"name": "123",
 				},
 			},
@@ -324,11 +314,11 @@ func TestGetHttpRouteError(t *testing.T) {
 }
 
 func TestGetBackendsError(t *testing.T) {
-	testcases := []interface{}{
+	testcases := []any{
 		nil,
 		123,
-		map[string]interface{}{},
-		map[string]interface{}{
+		map[string]any{},
+		map[string]any{
 			"backends": "123",
 		},
 	}
@@ -342,26 +332,26 @@ func TestGetBackendsError(t *testing.T) {
 func TestSetBackendWeightError(t *testing.T) {
 	type testcase struct {
 		backendName string
-		backends    []interface{}
+		backends    []any
 		weight      int64
 	}
 	testcases := []testcase{
 		{},
 		{
-			backends: []interface{}{
+			backends: []any{
 				"",
 			},
 		},
 		{
-			backends: []interface{}{
-				map[string]interface{}{
+			backends: []any{
+				map[string]any{
 					"abc": 123,
 				},
 			},
 		},
 		{
-			backends: []interface{}{
-				map[string]interface{}{
+			backends: []any{
+				map[string]any{
 					"serviceName": 123,
 				},
 			},
@@ -380,7 +370,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	mocks.DuplicateSetHeaderApisixRouteObj = toUnstructured(t, apisixSetHeaderDuplicateRoute)
 	mocks.ErrorApisixRouteObj = toUnstructured(t, errorApisixRoute)
 	t.Run("SetHeaderGetRouteError", func(t *testing.T) {
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -397,7 +386,6 @@ func TestSetHeaderRoute(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run("SetHeaderGetManagedRouteError", func(t *testing.T) {
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -420,7 +408,6 @@ func TestSetHeaderRoute(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run("SetHeaderDuplicateManagedRouteError", func(t *testing.T) {
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -445,7 +432,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderRouteNilMatchWithNew", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client: &mocks.FakeClient{
@@ -466,7 +452,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	t.Run("SetHeaderRouteNilMatch", func(t *testing.T) {
 		client := &mocks.FakeClient{}
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client:  client,
@@ -485,7 +470,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderRoutePriorityWithNew", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsGetNotFoundError: true,
 		}
@@ -512,7 +496,7 @@ func TestSetHeaderRoute(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, ok)
 
-		rule, ok := rules[0].(map[string]interface{})
+		rule, ok := rules[0].(map[string]any)
 		assert.Equal(t, true, ok)
 		priority, ok, err := unstructured.NestedInt64(rule, "priority")
 		assert.NoError(t, err)
@@ -521,7 +505,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderRoutePriorityWithNew", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsGetNotFoundError: false,
 		}
@@ -548,7 +531,7 @@ func TestSetHeaderRoute(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, ok)
 
-		rule, ok := rules[0].(map[string]interface{})
+		rule, ok := rules[0].(map[string]any)
 		assert.Equal(t, true, ok)
 		priority, ok, err := unstructured.NestedInt64(rule, "priority")
 		assert.NoError(t, err)
@@ -558,7 +541,6 @@ func TestSetHeaderRoute(t *testing.T) {
 
 	t.Run("SetHeaderRouteExprsWithNew", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsGetNotFoundError: true,
 		}
@@ -597,7 +579,7 @@ func TestSetHeaderRoute(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, ok)
 
-		rule, ok := rules[0].(map[string]interface{})
+		rule, ok := rules[0].(map[string]any)
 		assert.Equal(t, true, ok)
 		exprs, ok, err := unstructured.NestedSlice(rule, "match", "exprs")
 		assert.NoError(t, err)
@@ -613,7 +595,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderRouteExprs", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsGetNotFoundError: false,
 		}
@@ -652,7 +633,7 @@ func TestSetHeaderRoute(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, ok)
 
-		rule, ok := rules[0].(map[string]interface{})
+		rule, ok := rules[0].(map[string]any)
 		assert.Equal(t, true, ok)
 		exprs, ok, err := unstructured.NestedSlice(rule, "match", "exprs")
 		assert.NoError(t, err)
@@ -668,7 +649,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderDeleteError", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsDeleteError: true,
 		}
@@ -686,7 +666,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderCreateError", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsCreateError:      true,
 			IsGetNotFoundError: true,
@@ -710,7 +689,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("SetHeaderUpdateError", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			UpdateError:        true,
 			IsGetNotFoundError: false,
@@ -734,7 +712,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("RemoveManagedRoutesDeleteError", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsDeleteError: true,
 		}
@@ -749,7 +726,6 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 	t.Run("RemoveManagedRoutesNilManagedRoutes", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		client := &mocks.FakeClient{
 			IsDeleteError: true,
 		}
@@ -765,11 +741,11 @@ func TestSetHeaderRoute(t *testing.T) {
 	})
 }
 
-func assertExpr(t *testing.T, expr interface{}, op, name, scope, value string) {
+func assertExpr(t *testing.T, expr any, op, name, scope, value string) {
 	if expr == nil {
 		assert.Error(t, errors.New("expr is nil"))
 	}
-	typedExpr, ok := expr.(map[string]interface{})
+	typedExpr, ok := expr.(map[string]any)
 	assert.Equal(t, true, ok)
 
 	opAct, ok, err := unstructured.NestedString(typedExpr, "op")
@@ -799,7 +775,7 @@ func TestSetMirrorRoute(t *testing.T) {
 		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 
@@ -826,7 +802,6 @@ func TestRemoveManagedRoutes(t *testing.T) {
 	t.Run("RemoveManagedRoutes", func(t *testing.T) {
 		client := &mocks.FakeClient{}
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client:  client,
@@ -842,7 +817,6 @@ func TestRemoveManagedRoutes(t *testing.T) {
 			IsGetManagedRouteError: true,
 		}
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client:  client,
@@ -858,7 +832,6 @@ func TestRemoveManagedRoutes(t *testing.T) {
 			IsGetNotFoundError: true,
 		}
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
 			Client:  client,
@@ -889,7 +862,7 @@ func TestVerifyWeight(t *testing.T) {
 		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 
@@ -906,10 +879,9 @@ func TestType(t *testing.T) {
 	mocks.ApisixRouteObj = toUnstructured(t, apisixRoute)
 	t.Run("Type", func(t *testing.T) {
 		// Given
-		t.Parallel()
 		cfg := ReconcilerConfig{
 			Rollout: newRollout(stableServiceName, canaryServiceName, apisixRouteName),
-			Client:  client,
+			Client:  &mocks.FakeClient{},
 		}
 		r := NewReconciler(&cfg)
 

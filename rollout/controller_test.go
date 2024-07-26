@@ -99,10 +99,12 @@ type fixture struct {
 	kubeactions []core.Action
 	actions     []core.Action
 	// Objects from here preloaded into NewSimpleFake.
-	kubeobjects     []runtime.Object
-	objects         []runtime.Object
-	enqueuedObjects map[string]int
-	unfreezeTime    func() error
+	kubeobjects []runtime.Object
+	objects     []runtime.Object
+	// Acquire 'enqueuedObjectsLock' before accessing enqueuedObjects
+	enqueuedObjects     map[string]int
+	enqueuedObjectsLock sync.Mutex
+	unfreezeTime        func() error
 
 	// events holds all the K8s Event Reasons emitted during the run
 	events             []string
@@ -116,9 +118,12 @@ func newFixture(t *testing.T) *fixture {
 	f.kubeobjects = []runtime.Object{}
 	f.enqueuedObjects = make(map[string]int)
 	now := time.Now()
-	timeutil.Now = func() time.Time { return now }
+
+	timeutil.SetNowTimeFunc(func() time.Time {
+		return now
+	})
 	f.unfreezeTime = func() error {
-		timeutil.Now = time.Now
+		timeutil.SetNowTimeFunc(time.Now)
 		return nil
 	}
 
@@ -494,12 +499,12 @@ func calculatePatch(ro *v1alpha1.Rollout, patch string) string {
 	json.Unmarshal(newBytes, newRO)
 	newObservedGen := strconv.Itoa(int(newRO.Generation))
 
-	newPatch := make(map[string]interface{})
+	newPatch := make(map[string]any)
 	err = json.Unmarshal([]byte(patch), &newPatch)
 	if err != nil {
 		panic(err)
 	}
-	newStatus := newPatch["status"].(map[string]interface{})
+	newStatus := newPatch["status"].(map[string]any)
 	newStatus["observedGeneration"] = newObservedGen
 	newPatch["status"] = newStatus
 	newPatchBytes, _ := json.Marshal(newPatch)
@@ -507,7 +512,7 @@ func calculatePatch(ro *v1alpha1.Rollout, patch string) string {
 }
 
 func cleanPatch(expectedPatch string) string {
-	patch := make(map[string]interface{})
+	patch := make(map[string]any)
 	err := json.Unmarshal([]byte(expectedPatch), &patch)
 	if err != nil {
 		panic(err)
@@ -598,15 +603,15 @@ func (f *fixture) newController(resync resyncFunc) (*Controller, informers.Share
 		RefResolver:                     &FakeWorkloadRefResolver{},
 	})
 
-	var enqueuedObjectsLock sync.Mutex
-	c.enqueueRollout = func(obj interface{}) {
+	c.enqueueRollout = func(obj any) {
 		var key string
 		var err error
 		if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
 			panic(err)
 		}
-		enqueuedObjectsLock.Lock()
-		defer enqueuedObjectsLock.Unlock()
+
+		f.enqueuedObjectsLock.Lock()
+		defer f.enqueuedObjectsLock.Unlock()
 		count, ok := f.enqueuedObjects[key]
 		if !ok {
 			count = 0
@@ -615,7 +620,7 @@ func (f *fixture) newController(resync resyncFunc) (*Controller, informers.Share
 		f.enqueuedObjects[key] = count
 		c.rolloutWorkqueue.Add(obj)
 	}
-	c.enqueueRolloutAfter = func(obj interface{}, duration time.Duration) {
+	c.enqueueRolloutAfter = func(obj any, duration time.Duration) {
 		c.enqueueRollout(obj)
 	}
 	c.newTrafficRoutingReconciler = func(roCtx *rolloutContext) ([]trafficrouting.TrafficRoutingReconciler, error) {
@@ -720,7 +725,8 @@ func (f *fixture) runController(rolloutName string, startInformers bool, expectE
 		f.t.Errorf("%d expected actions did not happen:%+v", len(f.kubeactions)-len(k8sActions), f.kubeactions[len(k8sActions):])
 	}
 	fakeRecorder := c.recorder.(*record.FakeEventRecorder)
-	f.events = fakeRecorder.Events
+
+	f.events = fakeRecorder.Events()
 	return c
 }
 
@@ -783,6 +789,12 @@ func (f *fixture) expectPatchServiceAction(s *corev1.Service, newLabel string) i
 	}
 	len := len(f.kubeactions)
 	f.kubeactions = append(f.kubeactions, core.NewPatchAction(serviceSchema, s.Namespace, s.Name, types.MergePatchType, []byte(patch)))
+	return len
+}
+
+func (f *fixture) expectGetReplicaSetAction(r *appsv1.ReplicaSet) int { //nolint:unused
+	len := len(f.kubeactions)
+	f.kubeactions = append(f.kubeactions, core.NewGetAction(schema.GroupVersionResource{Resource: "replicasets"}, r.Namespace, r.Name))
 	return len
 }
 
@@ -944,6 +956,21 @@ func (f *fixture) getUpdatedReplicaSet(index int) *appsv1.ReplicaSet {
 	return rs
 }
 
+func (f *fixture) getPatchedReplicaSet(index int) *appsv1.ReplicaSet {
+	action := filterInformerActions(f.kubeclient.Actions())[index]
+	patchAction, ok := action.(core.PatchAction)
+	if !ok {
+		f.t.Fatalf("Expected Patch action, not %s", action.GetVerb())
+	}
+
+	rs := appsv1.ReplicaSet{}
+	err := json.Unmarshal(patchAction.GetPatch(), &rs)
+	if err != nil {
+		panic(err)
+	}
+	return &rs
+}
+
 func (f *fixture) verifyPatchedReplicaSet(index int, scaleDownDelaySeconds int32) {
 	action := filterInformerActions(f.kubeclient.Actions())[index]
 	patchAction, ok := action.(core.PatchAction)
@@ -1078,7 +1105,7 @@ func (f *fixture) getPatchedRolloutWithoutConditions(index int) string {
 	if !ok {
 		f.t.Fatalf("Expected Patch action, not %s", action.GetVerb())
 	}
-	ro := make(map[string]interface{})
+	ro := make(map[string]any)
 	err := json.Unmarshal(patchAction.GetPatch(), &ro)
 	if err != nil {
 		f.t.Fatalf("Unable to unmarshal Patch")
@@ -1579,7 +1606,7 @@ func TestGetReferencedAnalyses(t *testing.T) {
 	defer f.Close()
 
 	rolloutAnalysisFail := v1alpha1.RolloutAnalysis{
-		Templates: []v1alpha1.RolloutAnalysisTemplate{{
+		Templates: []v1alpha1.AnalysisTemplateRef{{
 			TemplateName: "does-not-exist",
 			ClusterScope: false,
 		}},
@@ -1638,12 +1665,12 @@ func TestGetReferencedAnalyses(t *testing.T) {
 	})
 }
 
-func TestGetReferencedAnalysisTemplate(t *testing.T) {
+func TestGetReferencedClusterAnalysisTemplate(t *testing.T) {
 	f := newFixture(t)
 	defer f.Close()
 	r := newBlueGreenRollout("rollout", 1, nil, "active-service", "preview-service")
 	roAnalysisTemplate := &v1alpha1.RolloutAnalysis{
-		Templates: []v1alpha1.RolloutAnalysisTemplate{{
+		Templates: []v1alpha1.AnalysisTemplateRef{{
 			TemplateName: "cluster-analysis-template-name",
 			ClusterScope: true,
 		}},
@@ -1659,7 +1686,53 @@ func TestGetReferencedAnalysisTemplate(t *testing.T) {
 	})
 
 	t.Run("get referenced analysisTemplate - success", func(t *testing.T) {
-		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplate("cluster-analysis-template-name"))
+		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplate("cluster-analysis-template-name", "cluster-example"))
+		c, _, _ := f.newController(noResyncPeriodFunc)
+		roCtx, err := c.newRolloutContext(r)
+		assert.NoError(t, err)
+		_, err = roCtx.getReferencedAnalysisTemplates(r, roAnalysisTemplate, validation.PrePromotionAnalysis, 0)
+		assert.NoError(t, err)
+	})
+}
+
+func TestGetInnerReferencedAnalysisTemplate(t *testing.T) {
+	f := newFixture(t)
+	defer f.Close()
+	r := newBlueGreenRollout("rollout", 1, nil, "active-service", "preview-service")
+	roAnalysisTemplate := &v1alpha1.RolloutAnalysis{
+		Templates: []v1alpha1.AnalysisTemplateRef{{
+			TemplateName: "first-cluster-analysis-template-name",
+			ClusterScope: true,
+		}},
+	}
+	f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplateWithAnalysisRefs("first-cluster-analysis-template-name", "second-cluster-analysis-template-name", "third-cluster-analysis-template-name"))
+
+	t.Run("get inner referenced analysisTemplate - fail", func(t *testing.T) {
+		c, _, _ := f.newController(noResyncPeriodFunc)
+		roCtx, err := c.newRolloutContext(r)
+		assert.NoError(t, err)
+		_, err = roCtx.getReferencedAnalysisTemplates(r, roAnalysisTemplate, validation.PrePromotionAnalysis, 0)
+		expectedErr := field.Invalid(field.NewPath("spec", "templates"), "second-cluster-analysis-template-name", "ClusterAnalysisTemplate 'second-cluster-analysis-template-name' not found")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr.Error(), err.Error())
+	})
+
+	t.Run("get inner referenced analysisTemplate second level - fail", func(t *testing.T) {
+		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplate("second-cluster-analysis-template-name", "cluster-example"))
+		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplateWithAnalysisRefs("third-cluster-analysis-template-name", "fourth-cluster-analysis-template-name"))
+		c, _, _ := f.newController(noResyncPeriodFunc)
+		roCtx, err := c.newRolloutContext(r)
+		assert.NoError(t, err)
+		_, err = roCtx.getReferencedAnalysisTemplates(r, roAnalysisTemplate, validation.PrePromotionAnalysis, 0)
+		expectedErr := field.Invalid(field.NewPath("spec", "templates"), "fourth-cluster-analysis-template-name", "ClusterAnalysisTemplate 'fourth-cluster-analysis-template-name' not found")
+		assert.Error(t, err)
+		assert.Equal(t, expectedErr.Error(), err.Error())
+	})
+
+	t.Run("get inner referenced analysisTemplate - success", func(t *testing.T) {
+		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplate("second-cluster-analysis-template-name", "cluster-example"))
+		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplateWithAnalysisRefs("third-cluster-analysis-template-name", "fourth-cluster-analysis-template-name"))
+		f.clusterAnalysisTemplateLister = append(f.clusterAnalysisTemplateLister, clusterAnalysisTemplate("fourth-cluster-analysis-template-name", "cluster-example"))
 		c, _, _ := f.newController(noResyncPeriodFunc)
 		roCtx, err := c.newRolloutContext(r)
 		assert.NoError(t, err)

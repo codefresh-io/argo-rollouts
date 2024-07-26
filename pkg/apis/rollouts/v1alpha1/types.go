@@ -137,6 +137,8 @@ type ObjectRef struct {
 	Kind string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`
 	// Name of the referent
 	Name string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
+	// Automatically scale down deployment
+	ScaleDown string `json:"scaleDown,omitempty" protobuf:"bytes,4,opt,name=scaleDown"`
 }
 
 const (
@@ -377,11 +379,15 @@ type RolloutTrafficRouting struct {
 	ManagedRoutes []MangedRoutes `json:"managedRoutes,omitempty" protobuf:"bytes,8,rep,name=managedRoutes"`
 	// Apisix holds specific configuration to use Apisix to route traffic
 	Apisix *ApisixTrafficRouting `json:"apisix,omitempty" protobuf:"bytes,9,opt,name=apisix"`
+
 	// +kubebuilder:validation:Schemaless
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Type=object
 	// Plugins holds specific configuration that traffic router plugins can use for routing traffic
 	Plugins map[string]json.RawMessage `json:"plugins,omitempty" protobuf:"bytes,10,opt,name=plugins"`
+
+	// MaxTrafficWeight The total weight of traffic. If unspecified, it defaults to 100
+	MaxTrafficWeight *int32 `json:"maxTrafficWeight,omitempty" protobuf:"varint,11,opt,name=maxTrafficWeight"`
 }
 
 type MangedRoutes struct {
@@ -531,6 +537,14 @@ type RolloutExperimentStep struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Analyses []RolloutExperimentStepAnalysisTemplateRef `json:"analyses,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,3,rep,name=analyses"`
+	// DryRun object contains the settings for running the analysis in Dry-Run mode
+	// +patchMergeKey=metricName
+	// +patchStrategy=merge
+	// +optional
+	DryRun []DryRun `json:"dryRun,omitempty" patchStrategy:"merge" patchMergeKey:"metricName" protobuf:"bytes,4,rep,name=dryRun"`
+	// AnalysisRunMetadata labels and annotations that will be added to the AnalysisRuns
+	// +optional
+	AnalysisRunMetadata AnalysisRunMetadata `json:"analysisRunMetadata,omitempty" protobuf:"bytes,5,opt,name=analysisRunMetadata"`
 }
 
 type RolloutExperimentStepAnalysisTemplateRef struct {
@@ -701,7 +715,7 @@ type RolloutAnalysis struct {
 	// Templates reference to a list of analysis templates to combine for an AnalysisRun
 	// +patchMergeKey=templateName
 	// +patchStrategy=merge
-	Templates []RolloutAnalysisTemplate `json:"templates,omitempty" patchStrategy:"merge" patchMergeKey:"templateName" protobuf:"bytes,1,rep,name=templates"`
+	Templates []AnalysisTemplateRef `json:"templates,omitempty" patchStrategy:"merge" patchMergeKey:"templateName" protobuf:"bytes,1,rep,name=templates"`
 	// Args the arguments that will be added to the AnalysisRuns
 	// +patchMergeKey=name
 	// +patchStrategy=merge
@@ -721,7 +735,7 @@ type RolloutAnalysis struct {
 	AnalysisRunMetadata AnalysisRunMetadata `json:"analysisRunMetadata,omitempty" protobuf:"bytes,5,opt,name=analysisRunMetadata"`
 }
 
-type RolloutAnalysisTemplate struct {
+type AnalysisTemplateRef struct {
 	//TemplateName name of template to use in AnalysisRun
 	// +optional
 	TemplateName string `json:"templateName" protobuf:"bytes,1,opt,name=templateName"`
@@ -1081,3 +1095,9 @@ type RolloutList struct {
 type RollbackWindowSpec struct {
 	Revisions int32 `json:"revisions,omitempty" protobuf:"varint,1,opt,name=revisions"`
 }
+
+const (
+	ScaleDownNever         string = "never"
+	ScaleDownOnSuccess     string = "onsuccess"
+	ScaleDownProgressively string = "progressively"
+)

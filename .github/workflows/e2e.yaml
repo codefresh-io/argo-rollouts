@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Event File
           path: ${{ github.event_path }}
@@ -38,18 +38,20 @@ jobs:
       fail-fast: false
       matrix:
         kubernetes-minor-version:
-          - 1.23
           - 1.24
           - 1.25
           - 1.26
+          - 1.27
+          - 1.28
+          - 1.29
     name: Run end-to-end tests
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v4.1.0
+        uses: actions/setup-go@v5.0.0
         with:
-          go-version: '1.20'
-      - uses: actions/checkout@v3.1.0
+          go-version: '1.21'
+      - uses: actions/checkout@v4
       - name: Setup k3s
         env:
           INSTALL_K3S_CHANNEL: v${{ matrix.kubernetes-minor-version }}
@@ -60,7 +62,7 @@ jobs:
           sudo chmod 755 ~/.kube/config
           kubectl version
           kubectl create ns argo-rollouts
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -85,14 +87,14 @@ jobs:
           [[ -f rerunreport.txt ]] && cat rerunreport.txt || echo "No rerun report found"
       - name: Upload E2E Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: E2E Test Results (k8s ${{ matrix.kubernetes-minor-version }})
           path: |
             junit.xml
       - name: Upload e2e-controller logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-controller-k8s-${{ matrix.kubernetes-minor-version }}.log
           path: /tmp/e2e-controller.log
-        if: ${{ failure() }}
+        if: ${{ always() }}

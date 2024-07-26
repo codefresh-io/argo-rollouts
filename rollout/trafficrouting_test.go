@@ -122,12 +122,59 @@ func TestReconcileTrafficRoutingVerifyWeightFalse(t *testing.T) {
 	f.fakeTrafficRouting.On("VerifyWeight", mock.Anything).Return(pointer.BoolPtr(false), nil)
 	c, i, k8sI := f.newController(noResyncPeriodFunc)
 	enqueued := false
-	c.enqueueRolloutAfter = func(obj interface{}, duration time.Duration) {
+	c.enqueueRolloutAfter = func(obj any, duration time.Duration) {
 		enqueued = true
 	}
 	f.expectPatchRolloutAction(ro)
 	f.runController(getKey(ro, t), true, false, c, i, k8sI)
 	assert.True(t, enqueued)
+}
+
+func TestReconcileTrafficRoutingVerifyWeightEndOfRollout(t *testing.T) {
+	f := newFixture(t)
+	defer f.Close()
+
+	steps := []v1alpha1.CanaryStep{
+		{
+			SetWeight: pointer.Int32Ptr(10),
+		},
+		{
+			Pause: &v1alpha1.RolloutPause{},
+		},
+	}
+	r1 := newCanaryRollout("foo", 10, nil, steps, pointer.Int32Ptr(2), intstr.FromInt(1), intstr.FromInt(0))
+	r2 := bumpVersion(r1)
+	r2.Spec.Strategy.Canary.TrafficRouting = &v1alpha1.RolloutTrafficRouting{}
+	r2.Spec.Strategy.Canary.CanaryService = "canary"
+	r2.Spec.Strategy.Canary.StableService = "stable"
+
+	rs1 := newReplicaSetWithStatus(r1, 10, 10)
+	rs2 := newReplicaSetWithStatus(r2, 10, 10)
+
+	rs1PodHash := rs1.Labels[v1alpha1.DefaultRolloutUniqueLabelKey]
+	rs2PodHash := rs2.Labels[v1alpha1.DefaultRolloutUniqueLabelKey]
+	canarySelector := map[string]string{v1alpha1.DefaultRolloutUniqueLabelKey: rs2PodHash}
+	stableSelector := map[string]string{v1alpha1.DefaultRolloutUniqueLabelKey: rs1PodHash}
+	canarySvc := newService("canary", 80, canarySelector, r2)
+	stableSvc := newService("stable", 80, stableSelector, r2)
+
+	f.kubeobjects = append(f.kubeobjects, rs1, rs2, canarySvc, stableSvc)
+	f.replicaSetLister = append(f.replicaSetLister, rs1, rs2)
+
+	r2 = updateCanaryRolloutStatus(r2, rs1PodHash, 10, 0, 10, false)
+	f.rolloutLister = append(f.rolloutLister, r2)
+	f.objects = append(f.objects, r2)
+
+	f.fakeTrafficRouting = newUnmockedFakeTrafficRoutingReconciler()
+	f.fakeTrafficRouting.On("UpdateHash", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	f.fakeTrafficRouting.On("SetWeight", mock.Anything, mock.Anything).Return(func(desiredWeight int32, additionalDestinations ...v1alpha1.WeightDestination) error {
+		// make sure SetWeight was called with correct value
+		assert.Equal(t, int32(100), desiredWeight)
+		return nil
+	})
+	f.fakeTrafficRouting.On("SetHeaderRoute", mock.Anything, mock.Anything).Return(nil)
+	f.fakeTrafficRouting.On("VerifyWeight", mock.Anything).Return(pointer.BoolPtr(false), nil)
+	f.runExpectError(getKey(r2, t), true)
 }
 
 func TestRolloutUseDesiredWeight(t *testing.T) {
@@ -249,13 +296,21 @@ func TestRolloutWithExperimentStep(t *testing.T) {
 					SpecRef:  "canary",
 					Replicas: pointer.Int32Ptr(1),
 					Weight:   pointer.Int32Ptr(5),
-				}},
+				},
+					{
+						Name:     "experiment-template-without-weight",
+						SpecRef:  "stable",
+						Replicas: pointer.Int32Ptr(1),
+					}},
 			},
 		},
 	}
 	r1 := newCanaryRollout("foo", 10, nil, steps, pointer.Int32Ptr(1), intstr.FromInt(1), intstr.FromInt(0))
 	r2 := bumpVersion(r1)
-	r2.Spec.Strategy.Canary.TrafficRouting = &v1alpha1.RolloutTrafficRouting{}
+	r1.Spec.Strategy.Canary.TrafficRouting = &v1alpha1.RolloutTrafficRouting{
+		SMI: &v1alpha1.SMITrafficRouting{},
+	}
+	r2.Spec.Strategy.Canary.TrafficRouting = &v1alpha1.RolloutTrafficRouting{SMI: &v1alpha1.SMITrafficRouting{}}
 	r2.Spec.Strategy.Canary.CanaryService = "canary"
 	r2.Spec.Strategy.Canary.StableService = "stable"
 
@@ -273,7 +328,12 @@ func TestRolloutWithExperimentStep(t *testing.T) {
 		Name:            "experiment-template",
 		ServiceName:     "experiment-service",
 		PodTemplateHash: rs2PodHash,
-	}}
+	},
+		{
+			Name:            "experiment-template-without-weight",
+			ServiceName:     "experiment-service-without-weight",
+			PodTemplateHash: rs2PodHash,
+		}}
 	r2.Status.Canary.CurrentExperiment = ex.Name
 
 	f.kubeobjects = append(f.kubeobjects, rs1, rs2, canarySvc, stableSvc)
@@ -293,18 +353,13 @@ func TestRolloutWithExperimentStep(t *testing.T) {
 			// make sure SetWeight was called with correct value
 			assert.Equal(t, int32(10), desiredWeight)
 			assert.Equal(t, int32(5), weightDestinations[0].Weight)
+			assert.Len(t, weightDestinations, 1)
 			assert.Equal(t, ex.Status.TemplateStatuses[0].ServiceName, weightDestinations[0].ServiceName)
 			assert.Equal(t, ex.Status.TemplateStatuses[0].PodTemplateHash, weightDestinations[0].PodTemplateHash)
 			return nil
 		})
 		f.fakeTrafficRouting.On("SetHeaderRoute", mock.Anything, mock.Anything).Return(nil)
-		f.fakeTrafficRouting.On("VerifyWeight", mock.Anything).Return(func(desiredWeight int32, weightDestinations ...v1alpha1.WeightDestination) error {
-			assert.Equal(t, int32(10), desiredWeight)
-			assert.Equal(t, int32(5), weightDestinations[0].Weight)
-			assert.Equal(t, ex.Status.TemplateStatuses[0].ServiceName, weightDestinations[0].ServiceName)
-			assert.Equal(t, ex.Status.TemplateStatuses[0].PodTemplateHash, weightDestinations[0].PodTemplateHash)
-			return nil
-		})
+		f.fakeTrafficRouting.On("VerifyWeight", mock.Anything, mock.Anything).Return(pointer.BoolPtr(true), nil)
 		f.run(getKey(r2, t))
 	})
 
@@ -319,11 +374,7 @@ func TestRolloutWithExperimentStep(t *testing.T) {
 			return nil
 		})
 		f.fakeTrafficRouting.On("SetHeaderRoute", mock.Anything, mock.Anything).Return(nil)
-		f.fakeTrafficRouting.On("VerifyWeight", mock.Anything).Return(func(desiredWeight int32, weightDestinations ...v1alpha1.WeightDestination) error {
-			assert.Equal(t, int32(10), desiredWeight)
-			assert.Len(t, weightDestinations, 0)
-			return nil
-		})
+		f.fakeTrafficRouting.On("VerifyWeight", mock.Anything, mock.Anything).Return(pointer.BoolPtr(true), nil)
 		f.run(getKey(r2, t))
 	})
 }
@@ -1213,10 +1264,10 @@ func TestDontWeightToZeroWhenDynamicallyRollingBackToStable(t *testing.T) {
 	f.rolloutLister = append(f.rolloutLister, r2)
 	f.objects = append(f.objects, r2)
 
-	f.expectUpdateReplicaSetAction(rs1)                 // Updates the revision annotation from 1 to 3
-	f.expectUpdateReplicaSetAction(rs1)                 // repeat of the above (not sure why)
-	scaleUpIndex := f.expectUpdateReplicaSetAction(rs1) // this one scales the stable RS to 10
-	f.expectPatchRolloutAction(r2)
+	f.expectUpdateReplicaSetAction(rs1)                 // Updates the revision annotation from 1 to 3 from func isScalingEvent
+	f.expectUpdateRolloutAction(r2)                     // Update the rollout revision from 1 to 3
+	scaleUpIndex := f.expectUpdateReplicaSetAction(rs1) // Scale The replicaset from 1 to 10 from func scaleReplicaSet
+	f.expectPatchRolloutAction(r2)                      // Updates the rollout status from the scaling to 10 action
 
 	f.fakeTrafficRouting = newUnmockedFakeTrafficRoutingReconciler()
 	f.fakeTrafficRouting.On("UpdateHash", mock.Anything, mock.Anything, mock.Anything).Return(func(canaryHash, stableHash string, additionalDestinations ...v1alpha1.WeightDestination) error {

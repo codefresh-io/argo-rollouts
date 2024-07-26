@@ -4,11 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/argoproj/argo-rollouts/utils/annotations"
+
+	"github.com/argoproj/argo-rollouts/utils/diff"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts"
@@ -16,11 +21,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	patchtypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/dynamic"
@@ -146,8 +153,8 @@ type reconcilerBase struct {
 	podRestarter RolloutPodRestarter
 
 	// used for unit testing
-	enqueueRollout              func(obj interface{})                                                          //nolint:structcheck
-	enqueueRolloutAfter         func(obj interface{}, duration time.Duration)                                  //nolint:structcheck
+	enqueueRollout              func(obj any)                                                                  //nolint:structcheck
+	enqueueRolloutAfter         func(obj any, duration time.Duration)                                          //nolint:structcheck
 	newTrafficRoutingReconciler func(roCtx *rolloutContext) ([]trafficrouting.TrafficRoutingReconciler, error) //nolint:structcheck
 
 	// recorder is an event recorder for recording Event resources to the Kubernetes API.
@@ -215,10 +222,10 @@ func NewController(cfg ControllerConfig) *Controller {
 		ingressWorkqueue:  cfg.IngressWorkQueue,
 		metricsServer:     cfg.MetricsServer,
 	}
-	controller.enqueueRollout = func(obj interface{}) {
+	controller.enqueueRollout = func(obj any) {
 		controllerutil.EnqueueRateLimited(obj, cfg.RolloutWorkQueue)
 	}
-	controller.enqueueRolloutAfter = func(obj interface{}, duration time.Duration) {
+	controller.enqueueRolloutAfter = func(obj any, duration time.Duration) {
 		controllerutil.EnqueueAfter(obj, duration, cfg.RolloutWorkQueue)
 	}
 
@@ -235,7 +242,7 @@ func NewController(cfg ControllerConfig) *Controller {
 	log.Info("Setting up event handlers")
 	// Set up an event handler for when rollout resources change
 	cfg.RolloutsInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(obj any) {
 			controller.enqueueRollout(obj)
 			ro := unstructuredutil.ObjectToRollout(obj)
 			if ro != nil {
@@ -251,7 +258,7 @@ func NewController(cfg ControllerConfig) *Controller {
 				}
 			}
 		},
-		UpdateFunc: func(old, new interface{}) {
+		UpdateFunc: func(old, new any) {
 			oldRollout := unstructuredutil.ObjectToRollout(old)
 			newRollout := unstructuredutil.ObjectToRollout(new)
 			if oldRollout != nil && newRollout != nil {
@@ -271,7 +278,7 @@ func NewController(cfg ControllerConfig) *Controller {
 			}
 			controller.enqueueRollout(new)
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(obj any) {
 			if ro := unstructuredutil.ObjectToRollout(obj); ro != nil {
 				logCtx := logutil.WithRollout(ro)
 				logCtx.Info("rollout enqueue due to delete event")
@@ -290,10 +297,10 @@ func NewController(cfg ControllerConfig) *Controller {
 	})
 
 	cfg.ReplicaSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(obj any) {
 			controllerutil.EnqueueParentObject(obj, register.RolloutKind, controller.enqueueRollout)
 		},
-		UpdateFunc: func(old, new interface{}) {
+		UpdateFunc: func(old, new any) {
 			newRS := new.(*appsv1.ReplicaSet)
 			oldRS := old.(*appsv1.ReplicaSet)
 			if newRS.ResourceVersion == oldRS.ResourceVersion {
@@ -303,16 +310,16 @@ func NewController(cfg ControllerConfig) *Controller {
 			}
 			controllerutil.EnqueueParentObject(new, register.RolloutKind, controller.enqueueRollout)
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(obj any) {
 			controllerutil.EnqueueParentObject(obj, register.RolloutKind, controller.enqueueRollout)
 		},
 	})
 
 	cfg.AnalysisRunInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+		AddFunc: func(obj any) {
 			controllerutil.EnqueueParentObject(obj, register.RolloutKind, controller.enqueueRollout)
 		},
-		UpdateFunc: func(old, new interface{}) {
+		UpdateFunc: func(old, new any) {
 			oldAR := unstructuredutil.ObjectToAnalysisRun(old)
 			newAR := unstructuredutil.ObjectToAnalysisRun(new)
 			if oldAR == nil || newAR == nil {
@@ -324,7 +331,7 @@ func NewController(cfg ControllerConfig) *Controller {
 			}
 			controllerutil.EnqueueParentObject(new, register.RolloutKind, controller.enqueueRollout)
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(obj any) {
 			controllerutil.EnqueueParentObject(obj, register.RolloutKind, controller.enqueueRollout)
 		},
 	})
@@ -806,38 +813,64 @@ func (c *rolloutContext) getReferencedRolloutAnalyses() (*[]validation.AnalysisT
 }
 
 func (c *rolloutContext) getReferencedAnalysisTemplates(rollout *v1alpha1.Rollout, rolloutAnalysis *v1alpha1.RolloutAnalysis, templateType validation.AnalysisTemplateType, canaryStepIndex int) (*validation.AnalysisTemplatesWithType, error) {
-	templates := make([]*v1alpha1.AnalysisTemplate, 0)
-	clusterTemplates := make([]*v1alpha1.ClusterAnalysisTemplate, 0)
 	fldPath := validation.GetAnalysisTemplateWithTypeFieldPath(templateType, canaryStepIndex)
 
-	for _, templateRef := range rolloutAnalysis.Templates {
-		if templateRef.ClusterScope {
-			template, err := c.clusterAnalysisTemplateLister.Get(templateRef.TemplateName)
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					return nil, field.Invalid(fldPath, templateRef.TemplateName, fmt.Sprintf("ClusterAnalysisTemplate '%s' not found", templateRef.TemplateName))
-				}
-				return nil, err
-			}
-			clusterTemplates = append(clusterTemplates, template)
-		} else {
-			template, err := c.analysisTemplateLister.AnalysisTemplates(c.rollout.Namespace).Get(templateRef.TemplateName)
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					return nil, field.Invalid(fldPath, templateRef.TemplateName, fmt.Sprintf("AnalysisTemplate '%s' not found", templateRef.TemplateName))
-				}
-				return nil, err
-			}
-			templates = append(templates, template)
-		}
-	}
+	templates, clusterTemplates, err := c.getReferencedAnalysisTemplatesFromRef(&rolloutAnalysis.Templates, fldPath)
 
 	return &validation.AnalysisTemplatesWithType{
 		AnalysisTemplates:        templates,
 		ClusterAnalysisTemplates: clusterTemplates,
 		TemplateType:             templateType,
 		CanaryStepIndex:          canaryStepIndex,
-	}, nil
+	}, err
+}
+
+func (c *rolloutContext) getReferencedAnalysisTemplatesFromRef(templateRefs *[]v1alpha1.AnalysisTemplateRef, fieldPath *field.Path) ([]*v1alpha1.AnalysisTemplate, []*v1alpha1.ClusterAnalysisTemplate, error) {
+	templates := make([]*v1alpha1.AnalysisTemplate, 0)
+	clusterTemplates := make([]*v1alpha1.ClusterAnalysisTemplate, 0)
+	for _, templateRef := range *templateRefs {
+		if templateRef.ClusterScope {
+			template, err := c.clusterAnalysisTemplateLister.Get(templateRef.TemplateName)
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					return nil, nil, field.Invalid(fieldPath, templateRef.TemplateName, fmt.Sprintf("ClusterAnalysisTemplate '%s' not found", templateRef.TemplateName))
+				}
+				return nil, nil, err
+			}
+			clusterTemplates = append(clusterTemplates, template)
+			// Look for nested templates
+			if template.Spec.Templates != nil {
+				innerFldPath := field.NewPath("spec", "templates")
+				innerTemplates, innerClusterTemplates, innerErr := c.getReferencedAnalysisTemplatesFromRef(&template.Spec.Templates, innerFldPath)
+				if innerErr != nil {
+					return nil, nil, innerErr
+				}
+				clusterTemplates = append(clusterTemplates, innerClusterTemplates...)
+				templates = append(templates, innerTemplates...)
+			}
+		} else {
+			template, err := c.analysisTemplateLister.AnalysisTemplates(c.rollout.Namespace).Get(templateRef.TemplateName)
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					return nil, nil, field.Invalid(fieldPath, templateRef.TemplateName, fmt.Sprintf("AnalysisTemplate '%s' not found", templateRef.TemplateName))
+				}
+				return nil, nil, err
+			}
+			templates = append(templates, template)
+			// Look for nested templates
+			if template.Spec.Templates != nil {
+				innerFldPath := field.NewPath("spec", "templates")
+				innerTemplates, innerClusterTemplates, innerErr := c.getReferencedAnalysisTemplatesFromRef(&template.Spec.Templates, innerFldPath)
+				if innerErr != nil {
+					return nil, nil, innerErr
+				}
+				clusterTemplates = append(clusterTemplates, innerClusterTemplates...)
+				templates = append(templates, innerTemplates...)
+			}
+		}
+	}
+	uniqueTemplates, uniqueClusterTemplates := analysisutil.FilterUniqueTemplates(templates, clusterTemplates)
+	return uniqueTemplates, uniqueClusterTemplates, nil
 }
 
 func (c *rolloutContext) getReferencedIngresses() (*[]ingressutil.Ingress, error) {
@@ -901,7 +934,7 @@ func (c *rolloutContext) getReferencedALBIngresses(canary *v1alpha1.CanaryStrate
 	return &ingresses, nil
 }
 
-func handleCacheError(name string, childFields []string, value interface{}, err error) (*[]ingressutil.Ingress, error) {
+func handleCacheError(name string, childFields []string, value any, err error) (*[]ingressutil.Ingress, error) {
 	if k8serrors.IsNotFound(err) {
 		fldPath := field.NewPath("spec", "strategy", "canary", "trafficRouting")
 		return nil, field.Invalid(fldPath.Child(name, childFields...), value, err.Error())
@@ -921,4 +954,93 @@ func remarshalRollout(r *v1alpha1.Rollout) *v1alpha1.Rollout {
 		panic(err)
 	}
 	return &remarshalled
+}
+
+// updateReplicaSetWithPatch updates the replicaset using Update and on failure falls back to a patch this function only exists to make sure we always can update
+// replicasets and to not get into an conflict loop updating replicasets. We should really look into a complete refactor of how rollouts handles replicasets such
+// that we do not keep a fully replicaset on the rollout context under newRS and instead switch to a patch only based approach.
+func (c *rolloutContext) updateReplicaSetFallbackToPatch(ctx context.Context, rs *appsv1.ReplicaSet) (*appsv1.ReplicaSet, error) {
+	updatedRS, err := c.kubeclientset.AppsV1().ReplicaSets(rs.Namespace).Update(ctx, rs, metav1.UpdateOptions{})
+	if err != nil {
+		if errors.IsConflict(err) {
+			if os.Getenv("ARGO_ROLLOUTS_LOG_RS_DIFF_CONFLICT") == "true" {
+				rsGet, err := c.replicaSetLister.ReplicaSets(rs.Namespace).Get(rs.Name)
+				if err != nil {
+					return nil, fmt.Errorf("error getting replicaset in updateReplicaSetFallbackToPatch %s: %w", rs.Name, err)
+				}
+				rsGetJson, err := json.Marshal(rsGet)
+				if err != nil {
+					return nil, fmt.Errorf("error marshalling informer replicaset in updateReplicaSetFallbackToPatch %s: %w", rs.Name, err)
+				}
+				rsCopyJson, err := json.Marshal(rs)
+				if err != nil {
+					return nil, fmt.Errorf("error marshalling memory replicaset in updateReplicaSetFallbackToPatch %s: %w", rs.Name, err)
+				}
+				c.log.Infof("Informer RS: %s", rsGetJson)
+				c.log.Infof("Memory   RS: %s", rsCopyJson)
+			}
+
+			c.log.Infof("Conflict when updating replicaset %s, falling back to patch", rs.Name)
+
+			patchRS := appsv1.ReplicaSet{}
+			patchRS.Spec.Replicas = rs.Spec.Replicas
+			patchRS.Spec.Template.Labels = rs.Spec.Template.Labels
+			patchRS.Spec.Template.Annotations = rs.Spec.Template.Annotations
+
+			patchRS.Annotations = make(map[string]string)
+			patchRS.Labels = make(map[string]string)
+			patchRS.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: make(map[string]string),
+			}
+
+			if _, found := rs.Labels[v1alpha1.DefaultRolloutUniqueLabelKey]; found {
+				patchRS.Labels[v1alpha1.DefaultRolloutUniqueLabelKey] = rs.Labels[v1alpha1.DefaultRolloutUniqueLabelKey]
+			}
+
+			if _, found := rs.Annotations[v1alpha1.DefaultReplicaSetScaleDownDeadlineAnnotationKey]; found {
+				patchRS.Annotations[v1alpha1.DefaultReplicaSetScaleDownDeadlineAnnotationKey] = rs.Labels[v1alpha1.DefaultReplicaSetScaleDownDeadlineAnnotationKey]
+			}
+
+			if _, found := rs.Spec.Selector.MatchLabels[v1alpha1.DefaultRolloutUniqueLabelKey]; found {
+				patchRS.Spec.Selector.MatchLabels[v1alpha1.DefaultRolloutUniqueLabelKey] = rs.Spec.Selector.MatchLabels[v1alpha1.DefaultRolloutUniqueLabelKey]
+			}
+
+			for key, value := range rs.Annotations {
+				if strings.HasPrefix(key, annotations.RolloutLabel) ||
+					strings.HasPrefix(key, "argo-rollouts.argoproj.io") ||
+					strings.HasPrefix(key, "experiment.argoproj.io") {
+					patchRS.Annotations[key] = value
+				}
+			}
+			for key, value := range rs.Labels {
+				if strings.HasPrefix(key, annotations.RolloutLabel) ||
+					strings.HasPrefix(key, "argo-rollouts.argoproj.io") ||
+					strings.HasPrefix(key, "experiment.argoproj.io") {
+					patchRS.Labels[key] = value
+				}
+			}
+
+			patch, _, err := diff.CreateTwoWayMergePatch(appsv1.ReplicaSet{}, patchRS, appsv1.ReplicaSet{})
+			if err != nil {
+				return nil, fmt.Errorf("error creating patch for conflict log in updateReplicaSetFallbackToPatch %s: %w", rs.Name, err)
+			}
+
+			c.log.Infof("Patching replicaset with patch: %s", string(patch))
+			updatedRS, err = c.kubeclientset.AppsV1().ReplicaSets(rs.Namespace).Patch(ctx, rs.Name, patchtypes.StrategicMergePatchType, patch, metav1.PatchOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("error patching replicaset in updateReplicaSetFallbackToPatch %s: %w", rs.Name, err)
+			}
+
+			err = c.replicaSetInformer.GetIndexer().Update(updatedRS)
+			if err != nil {
+				return nil, fmt.Errorf("error updating replicaset informer in updateReplicaSetFallbackToPatch %s: %w", rs.Name, err)
+			}
+
+			return updatedRS, err
+		}
+	}
+	if updatedRS != nil {
+		updatedRS.DeepCopyInto(rs)
+	}
+	return rs, err
 }

@@ -31,7 +31,7 @@ const metadataValidation = `properties:
    type: object
 type: object`
 
-var preserveUnknownFields = map[string]interface{}{
+var preserveUnknownFields = map[string]any{
 	"x-kubernetes-preserve-unknown-fields": true,
 }
 
@@ -43,7 +43,7 @@ var crdPaths = map[string]string{
 	"AnalysisRun":             "manifests/crds/analysis-run-crd.yaml",
 }
 
-func setValidationOverride(un *unstructured.Unstructured, fieldOverride map[string]interface{}, path string) {
+func setValidationOverride(un *unstructured.Unstructured, fieldOverride map[string]any, path string) {
 	// Prepare variables
 	preSchemaPath := []string{"spec", "versions"}
 	objVersions, _, _ := unstructured.NestedSlice(un.Object, preSchemaPath...)
@@ -59,11 +59,11 @@ func setValidationOverride(un *unstructured.Unstructured, fieldOverride map[stri
 	}
 
 	// Loop over version's slice
-	var finalOverride []interface{}
+	var finalOverride []any
 	for _, v := range objVersions {
-		unstructured.SetNestedMap(v.(map[string]interface{}), fieldOverride, schemaPath...)
+		unstructured.SetNestedMap(v.(map[string]any), fieldOverride, schemaPath...)
 
-		_, ok, err := unstructured.NestedFieldNoCopy(v.(map[string]interface{}), schemaPath...)
+		_, ok, err := unstructured.NestedFieldNoCopy(v.(map[string]any), schemaPath...)
 		checkErr(err)
 		if !ok {
 			panic(fmt.Sprintf("%s not found for kind %s", schemaPath, crdKind(un)))
@@ -96,11 +96,12 @@ func NewCustomResourceDefinition() []*extensionsobj.CustomResourceDefinition {
 	// clean up stuff left by controller-gen
 	deleteFile("config/webhook/manifests.yaml")
 	deleteFile("config/webhook")
-	deleteFile("config/argoproj.io_analysisruns.yaml")
-	deleteFile("config/argoproj.io_analysistemplates.yaml")
-	deleteFile("config/argoproj.io_clusteranalysistemplates.yaml")
-	deleteFile("config/argoproj.io_experiments.yaml")
-	deleteFile("config/argoproj.io_rollouts.yaml")
+	deleteFile("config/crd/argoproj.io_analysisruns.yaml")
+	deleteFile("config/crd/argoproj.io_analysistemplates.yaml")
+	deleteFile("config/crd/argoproj.io_clusteranalysistemplates.yaml")
+	deleteFile("config/crd/argoproj.io_experiments.yaml")
+	deleteFile("config/crd/argoproj.io_rollouts.yaml")
+	deleteFile("config/crd")
 	deleteFile("config")
 
 	crds := []*extensionsobj.CustomResourceDefinition{}
@@ -153,7 +154,7 @@ func createMetadataValidation(un *unstructured.Unstructured) {
 
 	switch kind {
 	case "Rollout":
-		var roValidated []interface{}
+		var roValidated []any
 		roPath := []string{
 			"template",
 			"properties",
@@ -161,12 +162,12 @@ func createMetadataValidation(un *unstructured.Unstructured) {
 		}
 		roPath = append(path, roPath...)
 		for _, v := range objVersions {
-			unstructured.SetNestedMap(v.(map[string]interface{}), metadataValidationObj.Object, roPath...)
+			unstructured.SetNestedMap(v.(map[string]any), metadataValidationObj.Object, roPath...)
 			roValidated = append(roValidated, v)
 		}
 		unstructured.SetNestedSlice(un.Object, roValidated, prePath...)
 	case "Experiment":
-		var exValidated []interface{}
+		var exValidated []any
 		exPath := []string{
 			"templates",
 			"items",
@@ -177,12 +178,12 @@ func createMetadataValidation(un *unstructured.Unstructured) {
 		}
 		exPath = append(path, exPath...)
 		for _, v := range objVersions {
-			unstructured.SetNestedMap(v.(map[string]interface{}), metadataValidationObj.Object, exPath...)
+			unstructured.SetNestedMap(v.(map[string]any), metadataValidationObj.Object, exPath...)
 			exValidated = append(exValidated, v)
 		}
 		unstructured.SetNestedSlice(un.Object, exValidated, prePath...)
 	case "ClusterAnalysisTemplate", "AnalysisTemplate", "AnalysisRun":
-		var analysisValidated []interface{}
+		var analysisValidated []any
 		analysisPath := []string{
 			"metrics",
 			"items",
@@ -196,12 +197,12 @@ func createMetadataValidation(un *unstructured.Unstructured) {
 
 		analysisPathJobMetadata := append(analysisPath, "metadata")
 		for _, v := range objVersions {
-			unstructured.SetNestedMap(v.(map[string]interface{}), metadataValidationObj.Object, analysisPathJobMetadata...)
+			unstructured.SetNestedMap(v.(map[string]any), metadataValidationObj.Object, analysisPathJobMetadata...)
 			analysisValidated = append(analysisValidated, v)
 		}
 		unstructured.SetNestedSlice(un.Object, analysisValidated, prePath...)
 
-		var analysisJobValidated []interface{}
+		var analysisJobValidated []any
 		analysisPathJobTemplateMetadata := []string{
 			"spec",
 			"properties",
@@ -211,7 +212,7 @@ func createMetadataValidation(un *unstructured.Unstructured) {
 		}
 		analysisPathJobTemplateMetadata = append(analysisPath, analysisPathJobTemplateMetadata...)
 		for _, v := range objVersions {
-			unstructured.SetNestedMap(v.(map[string]interface{}), metadataValidationObj.Object, analysisPathJobTemplateMetadata...)
+			unstructured.SetNestedMap(v.(map[string]any), metadataValidationObj.Object, analysisPathJobTemplateMetadata...)
 			analysisJobValidated = append(analysisJobValidated, v)
 		}
 		unstructured.SetNestedSlice(un.Object, analysisJobValidated, prePath...)
@@ -322,11 +323,12 @@ var patchAnnotationKeys = map[string]bool{
 	"x-kubernetes-patch-strategy":  true,
 	"x-kubernetes-list-map-keys":   true,
 	"x-kubernetes-list-type":       true,
+	"x-kubernetes-map-type":        true,
 }
 
 // injectPatchAnnotations injects patch annotations from given schema definitions and drop properties that don't have
 // patch annotations injected
-func injectPatchAnnotations(prop map[string]interface{}, propSchema spec.Schema, schemaDefinitions spec.Definitions) (bool, error) {
+func injectPatchAnnotations(prop map[string]any, propSchema spec.Schema, schemaDefinitions spec.Definitions) (bool, error) {
 	injected := false
 	for k, v := range propSchema.Extensions {
 		if patchAnnotationKeys[k] {
@@ -349,13 +351,13 @@ func injectPatchAnnotations(prop map[string]interface{}, propSchema spec.Schema,
 		propSchemas = schema.Properties
 	}
 
-	childProps, ok := prop["properties"].(map[string]interface{})
+	childProps, ok := prop["properties"].(map[string]any)
 	if !ok {
-		childProps = map[string]interface{}{}
+		childProps = map[string]any{}
 	}
 
 	for k, v := range childProps {
-		childInjected, err := injectPatchAnnotations(v.(map[string]interface{}), propSchemas[k], schemaDefinitions)
+		childInjected, err := injectPatchAnnotations(v.(map[string]any), propSchemas[k], schemaDefinitions)
 		if err != nil {
 			return false, err
 		}
@@ -390,7 +392,7 @@ func generateKustomizeSchema(crds []*extensionsobj.CustomResourceDefinition, out
 		schemaDefinitions[normalizeRef(k)] = v.Schema
 	}
 
-	definitions := map[string]interface{}{}
+	definitions := map[string]any{}
 	for _, crd := range crds {
 		var version string
 		var props map[string]extensionsobj.JSONSchemaProps
@@ -406,7 +408,7 @@ func generateKustomizeSchema(crds []*extensionsobj.CustomResourceDefinition, out
 		if err != nil {
 			return err
 		}
-		propsMap := map[string]interface{}{}
+		propsMap := map[string]any{}
 		err = json.Unmarshal(data, &propsMap)
 		if err != nil {
 			return err
@@ -414,7 +416,7 @@ func generateKustomizeSchema(crds []*extensionsobj.CustomResourceDefinition, out
 
 		crdSchema := schemaDefinitions[normalizeRef(fmt.Sprintf("%s/%s.%s", rolloutsDefinitionsPrefix, version, crd.Spec.Names.Kind))]
 		for k, p := range propsMap {
-			injected, err := injectPatchAnnotations(p.(map[string]interface{}), crdSchema.Properties[k], schemaDefinitions)
+			injected, err := injectPatchAnnotations(p.(map[string]any), crdSchema.Properties[k], schemaDefinitions)
 			if err != nil {
 				return err
 			}
@@ -426,7 +428,7 @@ func generateKustomizeSchema(crds []*extensionsobj.CustomResourceDefinition, out
 		}
 
 		definitionName := kubeopenapiutil.ToRESTFriendlyName(fmt.Sprintf("%s/%s.%s", crd.Spec.Group, version, crd.Spec.Names.Kind))
-		definitions[definitionName] = map[string]interface{}{
+		definitions[definitionName] = map[string]any{
 			"properties": propsMap,
 			"x-kubernetes-group-version-kind": []map[string]string{{
 				"group":   crd.Spec.Group,
@@ -435,7 +437,7 @@ func generateKustomizeSchema(crds []*extensionsobj.CustomResourceDefinition, out
 			}},
 		}
 	}
-	data, err := json.MarshalIndent(map[string]interface{}{
+	data, err := json.MarshalIndent(map[string]any{
 		"definitions": definitions,
 	}, "", "    ")
 	if err != nil {
