@@ -79,7 +79,7 @@
 
 ### Chore
 
-* **deps:** bump github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2 from 1.20.2 to 1.21.0 ([#2950](https://github.com/argoproj/argo-rollouts/issues/2950))
+* **deps:** bump github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2 from 1.20.2 to 1.23.0 ([#2950](https://github.com/argoproj/argo-rollouts/issues/2950))
 * **deps:** bump github.com/antonmedv/expr from 1.12.7 to 1.13.0 ([#2951](https://github.com/argoproj/argo-rollouts/issues/2951))
 
 ### Docs
