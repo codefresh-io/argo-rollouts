@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/rpc"
 
-	"github.com/argoproj/argo-rollouts/utils/plugin/types"
+	"github.com/hashicorp/go-plugin"
 
 	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/hashicorp/go-plugin"
+
+	"github.com/argoproj/argo-rollouts/utils/plugin/types"
 )
 
 type UpdateHashArgs struct {
