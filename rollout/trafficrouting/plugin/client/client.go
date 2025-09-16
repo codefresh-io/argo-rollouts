@@ -5,9 +5,10 @@ import (
 	"os/exec"
 	"sync"
 
+	goPlugin "github.com/hashicorp/go-plugin"
+
 	"github.com/argoproj/argo-rollouts/rollout/trafficrouting/plugin/rpc"
 	"github.com/argoproj/argo-rollouts/utils/plugin"
-	goPlugin "github.com/hashicorp/go-plugin"
 )
 
 type trafficPlugin struct {
