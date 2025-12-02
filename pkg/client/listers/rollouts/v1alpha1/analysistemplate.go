@@ -20,8 +20,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -38,25 +38,17 @@ type AnalysisTemplateLister interface {
 
 // analysisTemplateLister implements the AnalysisTemplateLister interface.
 type analysisTemplateLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.AnalysisTemplate]
 }
 
 // NewAnalysisTemplateLister returns a new AnalysisTemplateLister.
 func NewAnalysisTemplateLister(indexer cache.Indexer) AnalysisTemplateLister {
-	return &analysisTemplateLister{indexer: indexer}
-}
-
-// List lists all AnalysisTemplates in the indexer.
-func (s *analysisTemplateLister) List(selector labels.Selector) (ret []*v1alpha1.AnalysisTemplate, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AnalysisTemplate))
-	})
-	return ret, err
+	return &analysisTemplateLister{listers.New[*v1alpha1.AnalysisTemplate](indexer, v1alpha1.Resource("analysistemplate"))}
 }
 
 // AnalysisTemplates returns an object that can list and get AnalysisTemplates.
 func (s *analysisTemplateLister) AnalysisTemplates(namespace string) AnalysisTemplateNamespaceLister {
-	return analysisTemplateNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return analysisTemplateNamespaceLister{listers.NewNamespaced[*v1alpha1.AnalysisTemplate](s.ResourceIndexer, namespace)}
 }
 
 // AnalysisTemplateNamespaceLister helps list and get AnalysisTemplates.
@@ -74,26 +66,5 @@ type AnalysisTemplateNamespaceLister interface {
 // analysisTemplateNamespaceLister implements the AnalysisTemplateNamespaceLister
 // interface.
 type analysisTemplateNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AnalysisTemplates in the indexer for a given namespace.
-func (s analysisTemplateNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AnalysisTemplate, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AnalysisTemplate))
-	})
-	return ret, err
-}
-
-// Get retrieves the AnalysisTemplate from the indexer for a given namespace and name.
-func (s analysisTemplateNamespaceLister) Get(name string) (*v1alpha1.AnalysisTemplate, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("analysistemplate"), name)
-	}
-	return obj.(*v1alpha1.AnalysisTemplate), nil
+	listers.ResourceIndexer[*v1alpha1.AnalysisTemplate]
 }

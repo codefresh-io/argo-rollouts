@@ -20,8 +20,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -38,25 +38,17 @@ type RolloutLister interface {
 
 // rolloutLister implements the RolloutLister interface.
 type rolloutLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Rollout]
 }
 
 // NewRolloutLister returns a new RolloutLister.
 func NewRolloutLister(indexer cache.Indexer) RolloutLister {
-	return &rolloutLister{indexer: indexer}
-}
-
-// List lists all Rollouts in the indexer.
-func (s *rolloutLister) List(selector labels.Selector) (ret []*v1alpha1.Rollout, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Rollout))
-	})
-	return ret, err
+	return &rolloutLister{listers.New[*v1alpha1.Rollout](indexer, v1alpha1.Resource("rollout"))}
 }
 
 // Rollouts returns an object that can list and get Rollouts.
 func (s *rolloutLister) Rollouts(namespace string) RolloutNamespaceLister {
-	return rolloutNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return rolloutNamespaceLister{listers.NewNamespaced[*v1alpha1.Rollout](s.ResourceIndexer, namespace)}
 }
 
 // RolloutNamespaceLister helps list and get Rollouts.
@@ -74,26 +66,5 @@ type RolloutNamespaceLister interface {
 // rolloutNamespaceLister implements the RolloutNamespaceLister
 // interface.
 type rolloutNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Rollouts in the indexer for a given namespace.
-func (s rolloutNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Rollout, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Rollout))
-	})
-	return ret, err
-}
-
-// Get retrieves the Rollout from the indexer for a given namespace and name.
-func (s rolloutNamespaceLister) Get(name string) (*v1alpha1.Rollout, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("rollout"), name)
-	}
-	return obj.(*v1alpha1.Rollout), nil
+	listers.ResourceIndexer[*v1alpha1.Rollout]
 }
