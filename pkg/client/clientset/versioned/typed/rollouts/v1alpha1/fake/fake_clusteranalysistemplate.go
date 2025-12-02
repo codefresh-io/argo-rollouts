@@ -40,20 +40,22 @@ var clusteranalysistemplatesKind = v1alpha1.SchemeGroupVersion.WithKind("Cluster
 
 // Get takes name of the clusterAnalysisTemplate, and returns the corresponding clusterAnalysisTemplate object, and an error if there is any.
 func (c *FakeClusterAnalysisTemplates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ClusterAnalysisTemplate, err error) {
+	emptyResult := &v1alpha1.ClusterAnalysisTemplate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(clusteranalysistemplatesResource, name), &v1alpha1.ClusterAnalysisTemplate{})
+		Invokes(testing.NewRootGetActionWithOptions(clusteranalysistemplatesResource, name, options), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ClusterAnalysisTemplate), err
 }
 
 // List takes label and field selectors, and returns the list of ClusterAnalysisTemplates that match those selectors.
 func (c *FakeClusterAnalysisTemplates) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ClusterAnalysisTemplateList, err error) {
+	emptyResult := &v1alpha1.ClusterAnalysisTemplateList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(clusteranalysistemplatesResource, clusteranalysistemplatesKind, opts), &v1alpha1.ClusterAnalysisTemplateList{})
+		Invokes(testing.NewRootListActionWithOptions(clusteranalysistemplatesResource, clusteranalysistemplatesKind, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,25 +74,27 @@ func (c *FakeClusterAnalysisTemplates) List(ctx context.Context, opts v1.ListOpt
 // Watch returns a watch.Interface that watches the requested clusterAnalysisTemplates.
 func (c *FakeClusterAnalysisTemplates) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(clusteranalysistemplatesResource, opts))
+		InvokesWatch(testing.NewRootWatchActionWithOptions(clusteranalysistemplatesResource, opts))
 }
 
 // Create takes the representation of a clusterAnalysisTemplate and creates it.  Returns the server's representation of the clusterAnalysisTemplate, and an error, if there is any.
 func (c *FakeClusterAnalysisTemplates) Create(ctx context.Context, clusterAnalysisTemplate *v1alpha1.ClusterAnalysisTemplate, opts v1.CreateOptions) (result *v1alpha1.ClusterAnalysisTemplate, err error) {
+	emptyResult := &v1alpha1.ClusterAnalysisTemplate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(clusteranalysistemplatesResource, clusterAnalysisTemplate), &v1alpha1.ClusterAnalysisTemplate{})
+		Invokes(testing.NewRootCreateActionWithOptions(clusteranalysistemplatesResource, clusterAnalysisTemplate, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ClusterAnalysisTemplate), err
 }
 
 // Update takes the representation of a clusterAnalysisTemplate and updates it. Returns the server's representation of the clusterAnalysisTemplate, and an error, if there is any.
 func (c *FakeClusterAnalysisTemplates) Update(ctx context.Context, clusterAnalysisTemplate *v1alpha1.ClusterAnalysisTemplate, opts v1.UpdateOptions) (result *v1alpha1.ClusterAnalysisTemplate, err error) {
+	emptyResult := &v1alpha1.ClusterAnalysisTemplate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(clusteranalysistemplatesResource, clusterAnalysisTemplate), &v1alpha1.ClusterAnalysisTemplate{})
+		Invokes(testing.NewRootUpdateActionWithOptions(clusteranalysistemplatesResource, clusterAnalysisTemplate, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ClusterAnalysisTemplate), err
 }
@@ -104,7 +108,7 @@ func (c *FakeClusterAnalysisTemplates) Delete(ctx context.Context, name string, 
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeClusterAnalysisTemplates) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(clusteranalysistemplatesResource, listOpts)
+	action := testing.NewRootDeleteCollectionActionWithOptions(clusteranalysistemplatesResource, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ClusterAnalysisTemplateList{})
 	return err
@@ -112,10 +116,11 @@ func (c *FakeClusterAnalysisTemplates) DeleteCollection(ctx context.Context, opt
 
 // Patch applies the patch and returns the patched clusterAnalysisTemplate.
 func (c *FakeClusterAnalysisTemplates) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ClusterAnalysisTemplate, err error) {
+	emptyResult := &v1alpha1.ClusterAnalysisTemplate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(clusteranalysistemplatesResource, name, pt, data, subresources...), &v1alpha1.ClusterAnalysisTemplate{})
+		Invokes(testing.NewRootPatchSubresourceActionWithOptions(clusteranalysistemplatesResource, name, pt, data, opts, subresources...), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ClusterAnalysisTemplate), err
 }
