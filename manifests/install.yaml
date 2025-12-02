@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: analysisruns.argoproj.io
 spec:
   group: argoproj.io
@@ -1064,6 +1064,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -1170,6 +1171,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -1358,6 +1360,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -1759,6 +1762,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -1865,6 +1869,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -2053,6 +2058,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -2468,6 +2474,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -2574,6 +2581,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -2762,6 +2770,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -3508,7 +3517,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: analysistemplates.argoproj.io
 spec:
   group: argoproj.io
@@ -4565,6 +4574,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -4671,6 +4681,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -4859,6 +4870,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -5260,6 +5272,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -5366,6 +5379,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -5554,6 +5568,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -5969,6 +5984,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -6075,6 +6091,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -6263,6 +6280,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -6887,7 +6905,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: clusteranalysistemplates.argoproj.io
 spec:
   group: argoproj.io
@@ -7944,6 +7962,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -8050,6 +8069,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -8238,6 +8258,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -8639,6 +8660,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -8745,6 +8767,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -8933,6 +8956,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -9348,6 +9372,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -9454,6 +9479,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -9642,6 +9668,7 @@ spec:
                                                         format: int32
                                                         type: integer
                                                       service:
+                                                        default: ""
                                                         type: string
                                                     required:
                                                     - port
@@ -10266,7 +10293,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: experiments.argoproj.io
 spec:
   group: argoproj.io
@@ -11143,6 +11170,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -11249,6 +11277,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -11437,6 +11466,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -11838,6 +11868,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -11944,6 +11975,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -12132,6 +12164,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -12547,6 +12580,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -12653,6 +12687,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -12841,6 +12876,7 @@ spec:
                                             format: int32
                                             type: integer
                                           service:
+                                            default: ""
                                             type: string
                                         required:
                                         - port
@@ -13319,7 +13355,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: rollouts.argoproj.io
 spec:
   group: argoproj.io
@@ -14994,6 +15030,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -15100,6 +15137,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -15288,6 +15326,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -15689,6 +15728,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -15795,6 +15835,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -15983,6 +16024,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -16398,6 +16440,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -16504,6 +16547,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
@@ -16692,6 +16736,7 @@ spec:
                                       format: int32
                                       type: integer
                                     service:
+                                      default: ""
                                       type: string
                                   required:
                                   - port
