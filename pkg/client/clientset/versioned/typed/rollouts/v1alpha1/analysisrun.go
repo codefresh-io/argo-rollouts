@@ -19,9 +19,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	scheme "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -37,33 +37,34 @@ type AnalysisRunsGetter interface {
 
 // AnalysisRunInterface has methods to work with AnalysisRun resources.
 type AnalysisRunInterface interface {
-	Create(ctx context.Context, analysisRun *v1alpha1.AnalysisRun, opts v1.CreateOptions) (*v1alpha1.AnalysisRun, error)
-	Update(ctx context.Context, analysisRun *v1alpha1.AnalysisRun, opts v1.UpdateOptions) (*v1alpha1.AnalysisRun, error)
+	Create(ctx context.Context, analysisRun *rolloutsv1alpha1.AnalysisRun, opts v1.CreateOptions) (*rolloutsv1alpha1.AnalysisRun, error)
+	Update(ctx context.Context, analysisRun *rolloutsv1alpha1.AnalysisRun, opts v1.UpdateOptions) (*rolloutsv1alpha1.AnalysisRun, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, analysisRun *v1alpha1.AnalysisRun, opts v1.UpdateOptions) (*v1alpha1.AnalysisRun, error)
+	UpdateStatus(ctx context.Context, analysisRun *rolloutsv1alpha1.AnalysisRun, opts v1.UpdateOptions) (*rolloutsv1alpha1.AnalysisRun, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.AnalysisRun, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AnalysisRunList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*rolloutsv1alpha1.AnalysisRun, error)
+	List(ctx context.Context, opts v1.ListOptions) (*rolloutsv1alpha1.AnalysisRunList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AnalysisRun, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *rolloutsv1alpha1.AnalysisRun, err error)
 	AnalysisRunExpansion
 }
 
 // analysisRuns implements AnalysisRunInterface
 type analysisRuns struct {
-	*gentype.ClientWithList[*v1alpha1.AnalysisRun, *v1alpha1.AnalysisRunList]
+	*gentype.ClientWithList[*rolloutsv1alpha1.AnalysisRun, *rolloutsv1alpha1.AnalysisRunList]
 }
 
 // newAnalysisRuns returns a AnalysisRuns
 func newAnalysisRuns(c *ArgoprojV1alpha1Client, namespace string) *analysisRuns {
 	return &analysisRuns{
-		gentype.NewClientWithList[*v1alpha1.AnalysisRun, *v1alpha1.AnalysisRunList](
+		gentype.NewClientWithList[*rolloutsv1alpha1.AnalysisRun, *rolloutsv1alpha1.AnalysisRunList](
 			"analysisruns",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.AnalysisRun { return &v1alpha1.AnalysisRun{} },
-			func() *v1alpha1.AnalysisRunList { return &v1alpha1.AnalysisRunList{} }),
+			func() *rolloutsv1alpha1.AnalysisRun { return &rolloutsv1alpha1.AnalysisRun{} },
+			func() *rolloutsv1alpha1.AnalysisRunList { return &rolloutsv1alpha1.AnalysisRunList{} },
+		),
 	}
 }

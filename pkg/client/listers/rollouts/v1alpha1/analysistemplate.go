@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AnalysisTemplateLister helps list AnalysisTemplates.
@@ -30,7 +30,7 @@ import (
 type AnalysisTemplateLister interface {
 	// List lists all AnalysisTemplates in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AnalysisTemplate, err error)
+	List(selector labels.Selector) (ret []*rolloutsv1alpha1.AnalysisTemplate, err error)
 	// AnalysisTemplates returns an object that can list and get AnalysisTemplates.
 	AnalysisTemplates(namespace string) AnalysisTemplateNamespaceLister
 	AnalysisTemplateListerExpansion
@@ -38,17 +38,17 @@ type AnalysisTemplateLister interface {
 
 // analysisTemplateLister implements the AnalysisTemplateLister interface.
 type analysisTemplateLister struct {
-	listers.ResourceIndexer[*v1alpha1.AnalysisTemplate]
+	listers.ResourceIndexer[*rolloutsv1alpha1.AnalysisTemplate]
 }
 
 // NewAnalysisTemplateLister returns a new AnalysisTemplateLister.
 func NewAnalysisTemplateLister(indexer cache.Indexer) AnalysisTemplateLister {
-	return &analysisTemplateLister{listers.New[*v1alpha1.AnalysisTemplate](indexer, v1alpha1.Resource("analysistemplate"))}
+	return &analysisTemplateLister{listers.New[*rolloutsv1alpha1.AnalysisTemplate](indexer, rolloutsv1alpha1.Resource("analysistemplate"))}
 }
 
 // AnalysisTemplates returns an object that can list and get AnalysisTemplates.
 func (s *analysisTemplateLister) AnalysisTemplates(namespace string) AnalysisTemplateNamespaceLister {
-	return analysisTemplateNamespaceLister{listers.NewNamespaced[*v1alpha1.AnalysisTemplate](s.ResourceIndexer, namespace)}
+	return analysisTemplateNamespaceLister{listers.NewNamespaced[*rolloutsv1alpha1.AnalysisTemplate](s.ResourceIndexer, namespace)}
 }
 
 // AnalysisTemplateNamespaceLister helps list and get AnalysisTemplates.
@@ -56,15 +56,15 @@ func (s *analysisTemplateLister) AnalysisTemplates(namespace string) AnalysisTem
 type AnalysisTemplateNamespaceLister interface {
 	// List lists all AnalysisTemplates in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AnalysisTemplate, err error)
+	List(selector labels.Selector) (ret []*rolloutsv1alpha1.AnalysisTemplate, err error)
 	// Get retrieves the AnalysisTemplate from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AnalysisTemplate, error)
+	Get(name string) (*rolloutsv1alpha1.AnalysisTemplate, error)
 	AnalysisTemplateNamespaceListerExpansion
 }
 
 // analysisTemplateNamespaceLister implements the AnalysisTemplateNamespaceLister
 // interface.
 type analysisTemplateNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.AnalysisTemplate]
+	listers.ResourceIndexer[*rolloutsv1alpha1.AnalysisTemplate]
 }

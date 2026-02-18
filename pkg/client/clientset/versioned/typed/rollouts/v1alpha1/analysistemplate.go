@@ -19,9 +19,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	scheme "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -37,31 +37,32 @@ type AnalysisTemplatesGetter interface {
 
 // AnalysisTemplateInterface has methods to work with AnalysisTemplate resources.
 type AnalysisTemplateInterface interface {
-	Create(ctx context.Context, analysisTemplate *v1alpha1.AnalysisTemplate, opts v1.CreateOptions) (*v1alpha1.AnalysisTemplate, error)
-	Update(ctx context.Context, analysisTemplate *v1alpha1.AnalysisTemplate, opts v1.UpdateOptions) (*v1alpha1.AnalysisTemplate, error)
+	Create(ctx context.Context, analysisTemplate *rolloutsv1alpha1.AnalysisTemplate, opts v1.CreateOptions) (*rolloutsv1alpha1.AnalysisTemplate, error)
+	Update(ctx context.Context, analysisTemplate *rolloutsv1alpha1.AnalysisTemplate, opts v1.UpdateOptions) (*rolloutsv1alpha1.AnalysisTemplate, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.AnalysisTemplate, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AnalysisTemplateList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*rolloutsv1alpha1.AnalysisTemplate, error)
+	List(ctx context.Context, opts v1.ListOptions) (*rolloutsv1alpha1.AnalysisTemplateList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AnalysisTemplate, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *rolloutsv1alpha1.AnalysisTemplate, err error)
 	AnalysisTemplateExpansion
 }
 
 // analysisTemplates implements AnalysisTemplateInterface
 type analysisTemplates struct {
-	*gentype.ClientWithList[*v1alpha1.AnalysisTemplate, *v1alpha1.AnalysisTemplateList]
+	*gentype.ClientWithList[*rolloutsv1alpha1.AnalysisTemplate, *rolloutsv1alpha1.AnalysisTemplateList]
 }
 
 // newAnalysisTemplates returns a AnalysisTemplates
 func newAnalysisTemplates(c *ArgoprojV1alpha1Client, namespace string) *analysisTemplates {
 	return &analysisTemplates{
-		gentype.NewClientWithList[*v1alpha1.AnalysisTemplate, *v1alpha1.AnalysisTemplateList](
+		gentype.NewClientWithList[*rolloutsv1alpha1.AnalysisTemplate, *rolloutsv1alpha1.AnalysisTemplateList](
 			"analysistemplates",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.AnalysisTemplate { return &v1alpha1.AnalysisTemplate{} },
-			func() *v1alpha1.AnalysisTemplateList { return &v1alpha1.AnalysisTemplateList{} }),
+			func() *rolloutsv1alpha1.AnalysisTemplate { return &rolloutsv1alpha1.AnalysisTemplate{} },
+			func() *rolloutsv1alpha1.AnalysisTemplateList { return &rolloutsv1alpha1.AnalysisTemplateList{} },
+		),
 	}
 }

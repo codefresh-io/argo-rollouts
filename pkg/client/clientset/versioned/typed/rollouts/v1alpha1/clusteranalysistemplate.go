@@ -19,9 +19,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	scheme "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -37,31 +37,34 @@ type ClusterAnalysisTemplatesGetter interface {
 
 // ClusterAnalysisTemplateInterface has methods to work with ClusterAnalysisTemplate resources.
 type ClusterAnalysisTemplateInterface interface {
-	Create(ctx context.Context, clusterAnalysisTemplate *v1alpha1.ClusterAnalysisTemplate, opts v1.CreateOptions) (*v1alpha1.ClusterAnalysisTemplate, error)
-	Update(ctx context.Context, clusterAnalysisTemplate *v1alpha1.ClusterAnalysisTemplate, opts v1.UpdateOptions) (*v1alpha1.ClusterAnalysisTemplate, error)
+	Create(ctx context.Context, clusterAnalysisTemplate *rolloutsv1alpha1.ClusterAnalysisTemplate, opts v1.CreateOptions) (*rolloutsv1alpha1.ClusterAnalysisTemplate, error)
+	Update(ctx context.Context, clusterAnalysisTemplate *rolloutsv1alpha1.ClusterAnalysisTemplate, opts v1.UpdateOptions) (*rolloutsv1alpha1.ClusterAnalysisTemplate, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ClusterAnalysisTemplate, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ClusterAnalysisTemplateList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*rolloutsv1alpha1.ClusterAnalysisTemplate, error)
+	List(ctx context.Context, opts v1.ListOptions) (*rolloutsv1alpha1.ClusterAnalysisTemplateList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ClusterAnalysisTemplate, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *rolloutsv1alpha1.ClusterAnalysisTemplate, err error)
 	ClusterAnalysisTemplateExpansion
 }
 
 // clusterAnalysisTemplates implements ClusterAnalysisTemplateInterface
 type clusterAnalysisTemplates struct {
-	*gentype.ClientWithList[*v1alpha1.ClusterAnalysisTemplate, *v1alpha1.ClusterAnalysisTemplateList]
+	*gentype.ClientWithList[*rolloutsv1alpha1.ClusterAnalysisTemplate, *rolloutsv1alpha1.ClusterAnalysisTemplateList]
 }
 
 // newClusterAnalysisTemplates returns a ClusterAnalysisTemplates
 func newClusterAnalysisTemplates(c *ArgoprojV1alpha1Client) *clusterAnalysisTemplates {
 	return &clusterAnalysisTemplates{
-		gentype.NewClientWithList[*v1alpha1.ClusterAnalysisTemplate, *v1alpha1.ClusterAnalysisTemplateList](
+		gentype.NewClientWithList[*rolloutsv1alpha1.ClusterAnalysisTemplate, *rolloutsv1alpha1.ClusterAnalysisTemplateList](
 			"clusteranalysistemplates",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			"",
-			func() *v1alpha1.ClusterAnalysisTemplate { return &v1alpha1.ClusterAnalysisTemplate{} },
-			func() *v1alpha1.ClusterAnalysisTemplateList { return &v1alpha1.ClusterAnalysisTemplateList{} }),
+			func() *rolloutsv1alpha1.ClusterAnalysisTemplate { return &rolloutsv1alpha1.ClusterAnalysisTemplate{} },
+			func() *rolloutsv1alpha1.ClusterAnalysisTemplateList {
+				return &rolloutsv1alpha1.ClusterAnalysisTemplateList{}
+			},
+		),
 	}
 }
