@@ -1382,7 +1382,7 @@ func TestPodTemplateHashEquivalence(t *testing.T) {
 	var err error
 	// NOTE: This test will fail on every k8s library upgrade.
 	// To fix it, update expectedReplicaSetName to match the new hash.
-	expectedReplicaSetName := "guestbook-6c5667f666"
+	expectedReplicaSetName := "guestbook-6f496f9f78"
 
 	r1 := newBlueGreenRollout("guestbook", 1, nil, "active", "")
 	r1Resources := `
@@ -2033,7 +2033,7 @@ func TestGetReferencedAppMeshResources(t *testing.T) {
 		roCtx, err := c.newRolloutContext(rCopy)
 		assert.NoError(t, err)
 		_, err = roCtx.getRolloutReferencedResources()
-		expectedErr := field.Invalid(field.NewPath("spec", "strategy", "canary", "trafficRouting", "appmesh", "virtualService"), "null", "must provide virtual-service")
+		expectedErr := field.Invalid(field.NewPath("spec", "strategy", "canary", "trafficRouting", "appmesh", "virtualService"), nil, "must provide virtual-service")
 		assert.Equal(t, expectedErr.Error(), err.Error())
 	})
 
