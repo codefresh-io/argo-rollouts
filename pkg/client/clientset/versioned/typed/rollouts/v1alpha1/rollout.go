@@ -19,9 +19,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	scheme "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -37,33 +37,34 @@ type RolloutsGetter interface {
 
 // RolloutInterface has methods to work with Rollout resources.
 type RolloutInterface interface {
-	Create(ctx context.Context, rollout *v1alpha1.Rollout, opts v1.CreateOptions) (*v1alpha1.Rollout, error)
-	Update(ctx context.Context, rollout *v1alpha1.Rollout, opts v1.UpdateOptions) (*v1alpha1.Rollout, error)
+	Create(ctx context.Context, rollout *rolloutsv1alpha1.Rollout, opts v1.CreateOptions) (*rolloutsv1alpha1.Rollout, error)
+	Update(ctx context.Context, rollout *rolloutsv1alpha1.Rollout, opts v1.UpdateOptions) (*rolloutsv1alpha1.Rollout, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, rollout *v1alpha1.Rollout, opts v1.UpdateOptions) (*v1alpha1.Rollout, error)
+	UpdateStatus(ctx context.Context, rollout *rolloutsv1alpha1.Rollout, opts v1.UpdateOptions) (*rolloutsv1alpha1.Rollout, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Rollout, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RolloutList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*rolloutsv1alpha1.Rollout, error)
+	List(ctx context.Context, opts v1.ListOptions) (*rolloutsv1alpha1.RolloutList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Rollout, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *rolloutsv1alpha1.Rollout, err error)
 	RolloutExpansion
 }
 
 // rollouts implements RolloutInterface
 type rollouts struct {
-	*gentype.ClientWithList[*v1alpha1.Rollout, *v1alpha1.RolloutList]
+	*gentype.ClientWithList[*rolloutsv1alpha1.Rollout, *rolloutsv1alpha1.RolloutList]
 }
 
 // newRollouts returns a Rollouts
 func newRollouts(c *ArgoprojV1alpha1Client, namespace string) *rollouts {
 	return &rollouts{
-		gentype.NewClientWithList[*v1alpha1.Rollout, *v1alpha1.RolloutList](
+		gentype.NewClientWithList[*rolloutsv1alpha1.Rollout, *rolloutsv1alpha1.RolloutList](
 			"rollouts",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1alpha1.Rollout { return &v1alpha1.Rollout{} },
-			func() *v1alpha1.RolloutList { return &v1alpha1.RolloutList{} }),
+			func() *rolloutsv1alpha1.Rollout { return &rolloutsv1alpha1.Rollout{} },
+			func() *rolloutsv1alpha1.RolloutList { return &rolloutsv1alpha1.RolloutList{} },
+		),
 	}
 }

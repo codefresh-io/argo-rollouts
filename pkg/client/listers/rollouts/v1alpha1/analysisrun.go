@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // AnalysisRunLister helps list AnalysisRuns.
@@ -30,7 +30,7 @@ import (
 type AnalysisRunLister interface {
 	// List lists all AnalysisRuns in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AnalysisRun, err error)
+	List(selector labels.Selector) (ret []*rolloutsv1alpha1.AnalysisRun, err error)
 	// AnalysisRuns returns an object that can list and get AnalysisRuns.
 	AnalysisRuns(namespace string) AnalysisRunNamespaceLister
 	AnalysisRunListerExpansion
@@ -38,17 +38,17 @@ type AnalysisRunLister interface {
 
 // analysisRunLister implements the AnalysisRunLister interface.
 type analysisRunLister struct {
-	listers.ResourceIndexer[*v1alpha1.AnalysisRun]
+	listers.ResourceIndexer[*rolloutsv1alpha1.AnalysisRun]
 }
 
 // NewAnalysisRunLister returns a new AnalysisRunLister.
 func NewAnalysisRunLister(indexer cache.Indexer) AnalysisRunLister {
-	return &analysisRunLister{listers.New[*v1alpha1.AnalysisRun](indexer, v1alpha1.Resource("analysisrun"))}
+	return &analysisRunLister{listers.New[*rolloutsv1alpha1.AnalysisRun](indexer, rolloutsv1alpha1.Resource("analysisrun"))}
 }
 
 // AnalysisRuns returns an object that can list and get AnalysisRuns.
 func (s *analysisRunLister) AnalysisRuns(namespace string) AnalysisRunNamespaceLister {
-	return analysisRunNamespaceLister{listers.NewNamespaced[*v1alpha1.AnalysisRun](s.ResourceIndexer, namespace)}
+	return analysisRunNamespaceLister{listers.NewNamespaced[*rolloutsv1alpha1.AnalysisRun](s.ResourceIndexer, namespace)}
 }
 
 // AnalysisRunNamespaceLister helps list and get AnalysisRuns.
@@ -56,15 +56,15 @@ func (s *analysisRunLister) AnalysisRuns(namespace string) AnalysisRunNamespaceL
 type AnalysisRunNamespaceLister interface {
 	// List lists all AnalysisRuns in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.AnalysisRun, err error)
+	List(selector labels.Selector) (ret []*rolloutsv1alpha1.AnalysisRun, err error)
 	// Get retrieves the AnalysisRun from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.AnalysisRun, error)
+	Get(name string) (*rolloutsv1alpha1.AnalysisRun, error)
 	AnalysisRunNamespaceListerExpansion
 }
 
 // analysisRunNamespaceLister implements the AnalysisRunNamespaceLister
 // interface.
 type analysisRunNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.AnalysisRun]
+	listers.ResourceIndexer[*rolloutsv1alpha1.AnalysisRun]
 }

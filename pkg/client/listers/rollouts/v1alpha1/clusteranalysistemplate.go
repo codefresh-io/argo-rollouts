@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	rolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ClusterAnalysisTemplateLister helps list ClusterAnalysisTemplates.
@@ -30,19 +30,19 @@ import (
 type ClusterAnalysisTemplateLister interface {
 	// List lists all ClusterAnalysisTemplates in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ClusterAnalysisTemplate, err error)
+	List(selector labels.Selector) (ret []*rolloutsv1alpha1.ClusterAnalysisTemplate, err error)
 	// Get retrieves the ClusterAnalysisTemplate from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ClusterAnalysisTemplate, error)
+	Get(name string) (*rolloutsv1alpha1.ClusterAnalysisTemplate, error)
 	ClusterAnalysisTemplateListerExpansion
 }
 
 // clusterAnalysisTemplateLister implements the ClusterAnalysisTemplateLister interface.
 type clusterAnalysisTemplateLister struct {
-	listers.ResourceIndexer[*v1alpha1.ClusterAnalysisTemplate]
+	listers.ResourceIndexer[*rolloutsv1alpha1.ClusterAnalysisTemplate]
 }
 
 // NewClusterAnalysisTemplateLister returns a new ClusterAnalysisTemplateLister.
 func NewClusterAnalysisTemplateLister(indexer cache.Indexer) ClusterAnalysisTemplateLister {
-	return &clusterAnalysisTemplateLister{listers.New[*v1alpha1.ClusterAnalysisTemplate](indexer, v1alpha1.Resource("clusteranalysistemplate"))}
+	return &clusterAnalysisTemplateLister{listers.New[*rolloutsv1alpha1.ClusterAnalysisTemplate](indexer, rolloutsv1alpha1.Resource("clusteranalysistemplate"))}
 }
